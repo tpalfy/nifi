@@ -16,6 +16,11 @@
  */
 package org.apache.nifi.idbroker.domain.aws;
 
+import org.apache.commons.lang3.builder.EqualsBuilder;
+import org.apache.commons.lang3.builder.HashCodeBuilder;
+
+import java.util.StringJoiner;
+
 public class IDBrokerAWSCredentials {
     private Credentials credentials;
 
@@ -28,5 +33,32 @@ public class IDBrokerAWSCredentials {
 
     public void setCredentials(Credentials credentials) {
         this.credentials = credentials;
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+
+        if (o == null || getClass() != o.getClass()) return false;
+
+        IDBrokerAWSCredentials that = (IDBrokerAWSCredentials) o;
+
+        return new EqualsBuilder()
+            .append(credentials, that.credentials)
+            .isEquals();
+    }
+
+    @Override
+    public int hashCode() {
+        return new HashCodeBuilder(17, 37)
+            .append(credentials)
+            .toHashCode();
+    }
+
+    @Override
+    public String toString() {
+        return new StringJoiner(", ", IDBrokerAWSCredentials.class.getSimpleName() + "[", "]")
+            .add("credentials=" + credentials)
+            .toString();
     }
 }

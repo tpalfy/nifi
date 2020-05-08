@@ -16,15 +16,17 @@
  */
 package org.apache.nifi.idbroker.service;
 
+import com.fasterxml.jackson.core.JsonParseException;
 import com.fasterxml.jackson.databind.DeserializationFeature;
+import com.fasterxml.jackson.databind.JsonMappingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.PropertyNamingStrategy;
 import com.google.common.annotations.VisibleForTesting;
+import org.apache.commons.io.IOUtils;
 import org.apache.http.Header;
 import org.apache.http.HttpResponse;
 import org.apache.http.auth.AuthSchemeProvider;
 import org.apache.http.auth.AuthScope;
-import org.apache.http.client.HttpClient;
 import org.apache.http.client.config.AuthSchemes;
 import org.apache.http.client.methods.HttpGet;
 import org.apache.http.config.Lookup;
@@ -36,10 +38,8 @@ import org.apache.http.impl.client.HttpClients;
 import org.apache.http.message.BasicHeader;
 import org.apache.nifi.idbroker.domain.CloudProviderHandler;
 import org.apache.nifi.idbroker.domain.IDBrokerToken;
-import org.ietf.jgss.GSSException;
-import org.ietf.jgss.GSSManager;
-import org.ietf.jgss.GSSName;
-import org.ietf.jgss.Oid;
+import org.apache.nifi.idbroker.domain.RetryableCommunicationException;
+import org.apache.nifi.processor.exception.ProcessException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -51,12 +51,16 @@ import javax.security.auth.callback.PasswordCallback;
 import javax.security.auth.login.AppConfigurationEntry;
 import javax.security.auth.login.Configuration;
 import javax.security.auth.login.LoginContext;
+import javax.security.auth.login.LoginException;
+import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.io.InputStream;
+import java.nio.charset.StandardCharsets;
 import java.security.Principal;
 import java.security.PrivilegedAction;
 import java.util.HashMap;
 import java.util.StringJoiner;
+import java.util.function.Function;
 
 import static org.apache.http.auth.AuthScope.ANY_HOST;
 import static org.apache.http.auth.AuthScope.ANY_PORT;
@@ -72,7 +76,7 @@ public class IDBrokerClient {
     private final String password;
 
     private final ConfigService configService;
-    private final HttpClient httpClient;
+    private final CloseableHttpClient httpClient;
 
     private final HashMap<CloudProviderHandler<?, ?>, IDBrokerToken> cloudProviderToIDBrokerToken = new HashMap<>();
     private final HashMap<CloudProviderHandler<?, ?>, Object> cloudProviderToCredentials = new HashMap<>();
@@ -89,10 +93,18 @@ public class IDBrokerClient {
         this.httpClient = createHttpClient();
     }
 
-    <I, C> I getCredentials(CloudProviderHandler<I, C> cloudProvider) {
-        IDBrokerToken idBrokerToken = getCachedIdBrokerToken(cloudProvider);
+    public <I, C> I getCredentials(CloudProviderHandler<I, C> cloudProvider) {
+//        IDBrokerToken idBrokerToken = getCachedIdBrokerToken(cloudProvider);
+        IDBrokerToken idBrokerToken = new TokenService(httpClient, userName, password, configService){
+            @Override
+            protected <A> A runKerberized(PrivilegedAction<A> privilegedAction) {
+                return privilegedAction.run();
+            }
+        }.getCachedResource(cloudProvider);
 
-        I credentials = getCachedCloudCredentials(cloudProvider, idBrokerToken);
+//        I credentials = getCachedCloudCredentials(cloudProvider, idBrokerToken);
+        I credentials = new CredentialService(httpClient, configService)
+            .getCachedCloudCredentials(cloudProvider, idBrokerToken);
 
         return credentials;
     }
@@ -108,19 +120,6 @@ public class IDBrokerClient {
         return idBrokerToken;
     }
 
-    IDBrokerToken getIdBrokerToken(CloudProviderHandler<?, ?> cloudProvider) {
-        String idBrokerTokenUrl = getIDBrokerTokenUrl(cloudProvider);
-        HttpResponse idBrokerTokenResponse = requestIDBrokerToken(idBrokerTokenUrl);
-
-        try (InputStream idBrokerTokenResponseContent = idBrokerTokenResponse.getEntity().getContent()) {
-            IDBrokerToken idBrokerToken = mapContent(idBrokerTokenResponseContent, IDBrokerToken.class, PropertyNamingStrategy.SNAKE_CASE);
-            return idBrokerToken;
-        } catch (IOException e) {
-            // TODO Exception during reading id broker token response
-            throw new RuntimeException(e);
-        }
-    }
-
     <I, C> I getCachedCloudCredentials(CloudProviderHandler<I, C> cloudProvider, IDBrokerToken idBrokerToken) {
         I credentials = (I) cloudProviderToCredentials.computeIfAbsent(cloudProvider, _cloudProvider -> getCredentials(cloudProvider, cloudProvider.getIDBrokerCloudCredentialsType(), idBrokerToken));
 
@@ -132,22 +131,45 @@ public class IDBrokerClient {
         return credentials;
     }
 
+    IDBrokerToken getIdBrokerToken(CloudProviderHandler<?, ?> cloudProvider) {
+        return getFromIDBroker(
+            getIDBrokerTokenUrl(cloudProvider),
+            url -> requestIDBrokerToken(url),
+            content -> mapContent(content, IDBrokerToken.class, PropertyNamingStrategy.SNAKE_CASE)
+        );
+    }
+
     <I, C> I getCredentials(CloudProviderHandler<I, C> cloudProvider, Class<I> credentialsType, IDBrokerToken idBrokerToken) {
-        String cloudCredentialsUrl = getCredentialsUrl(cloudProvider);
-        HttpResponse credentialsResponse = requestCloudCredentials(cloudCredentialsUrl, idBrokerToken);
+        return getFromIDBroker(
+            getCredentialsUrl(cloudProvider),
+            url -> requestCloudCredentials(url, idBrokerToken),
+            content -> mapContent(content, credentialsType, PropertyNamingStrategy.UPPER_CAMEL_CASE)
+        );
+    }
 
-        try (InputStream credentialsResponseContent = credentialsResponse.getEntity().getContent()) {
-            I credentials = mapContent(credentialsResponseContent, credentialsType, PropertyNamingStrategy.UPPER_CAMEL_CASE);
+    <T> T getFromIDBroker(String url, Function<String, HttpResponse> requester, ContentMapper<T> contentMapper) throws RetryableCommunicationException {
+        HttpResponse response = requester.apply(url);
 
-            return credentials;
+        try (InputStream content = response.getEntity().getContent()) {
+            try {
+                T mappedContent = contentMapper.mapContent(content);
+
+                return mappedContent;
+            } catch (JsonParseException | JsonMappingException e) {
+                HttpResponse errorHttpResponse = requester.apply(url);
+
+                String errorResponse = IOUtils.toString(errorHttpResponse.getEntity().getContent(), StandardCharsets.UTF_8);
+
+                throw new ProcessException("Didn't get valid response from IDBroker via '" + url + "', response was:\n" + errorResponse, e);
+            }
         } catch (IOException e) {
-            // TODO Exception during reading cloud credentials response
-            throw new RuntimeException(e);
+            throw new RetryableCommunicationException("Couldn't get response from IDBroker via '" + url + "'", e);
         }
     }
 
     String getIDBrokerTokenUrl(CloudProviderHandler<?, ?> cloudProvider) {
         // https://HOST:8444/gateway/dt/knoxtoken/api/v1/token
+        // (The result looks provider agnostic)
 
         StringJoiner urlBuilder = new StringJoiner("/")
             .add(configService.getRootAddress(cloudProvider))
@@ -158,6 +180,7 @@ public class IDBrokerClient {
     }
 
     String getCredentialsUrl(CloudProviderHandler<?, ?> cloudProvider) {
+        // e.g. for AWS
         // https://HOST:8444/gateway/aws-cab/cab/api/v1/credentials
 
         StringJoiner urlBuilder = new StringJoiner("/")
@@ -216,9 +239,8 @@ public class IDBrokerClient {
             Subject serviceSubject = loginContext.getSubject();
 
             return Subject.doAs(serviceSubject, privilegedAction);
-        } catch (Exception e) {
-            // TODO Exception during kerberos authentication
-            throw new RuntimeException(e);
+        } catch (LoginException e) {
+            throw new ProcessException("Kerberos authentication error for user '" + userName + "'", e);
         }
     }
 
@@ -229,18 +251,22 @@ public class IDBrokerClient {
 
             HttpResponse response = httpClient.execute(httpGet);
 
-            if (response.getStatusLine().getStatusCode() != 200) {
-                // TODO Http error code
+            int statusCode = response.getStatusLine().getStatusCode();
+            if (statusCode == HttpServletResponse.SC_SERVICE_UNAVAILABLE) {
+                String errorResponse = IOUtils.toString(response.getEntity().getContent(), StandardCharsets.UTF_8);
+                throw new RetryableCommunicationException("Request to '" + url + "' returned status code '" + statusCode + "', response was:\n" + errorResponse);
+            } else if (statusCode != HttpServletResponse.SC_OK) {
+                String errorResponse = IOUtils.toString(response.getEntity().getContent(), StandardCharsets.UTF_8);
+                throw new ProcessException("Request to '" + url + "' returned status code '" + statusCode + "', response was:\n" + errorResponse);
             }
 
             return response;
         } catch (IOException e) {
-            // TODO Exception during http call
-            throw new RuntimeException(e);
+            throw new RetryableCommunicationException("Got exception while sending request to url '" + url + "'", e);
         }
     }
 
-    <T> T mapContent(InputStream content, Class<T> type, PropertyNamingStrategy propertyNamingStrategy) throws IOException {
+    <T> T mapContent(InputStream content, Class<T> type, PropertyNamingStrategy propertyNamingStrategy) throws IOException, JsonParseException, JsonMappingException {
         ObjectMapper objectMapper = new ObjectMapper();
         objectMapper.setPropertyNamingStrategy(propertyNamingStrategy);
         objectMapper.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
@@ -250,7 +276,7 @@ public class IDBrokerClient {
         return contentAsObject;
     }
 
-    HttpClient createHttpClient() {
+    CloseableHttpClient createHttpClient() {
         BasicCredentialsProvider credentialsProvider = createCredentialsProvider();
 
         Lookup<AuthSchemeProvider> authSchemeRegistry = createAuthSchemeRegistry();
@@ -262,8 +288,8 @@ public class IDBrokerClient {
 
     Lookup<AuthSchemeProvider> createAuthSchemeRegistry() {
         return RegistryBuilder.<AuthSchemeProvider>create()
-            .register(AuthSchemes.SPNEGO, __ -> new SPNegoScheme()
-            ).build();
+            .register(AuthSchemes.SPNEGO, __ -> new SPNegoScheme())
+            .build();
     }
 
     BasicCredentialsProvider createCredentialsProvider() {
@@ -306,5 +332,10 @@ public class IDBrokerClient {
         boolean expired = expirationTimestamp - System.currentTimeMillis() < CACHE_RENEW_TIME_THRESHOLD_MS;
 
         return expired;
+    }
+
+    @FunctionalInterface
+    private interface ContentMapper<T> {
+        T mapContent(InputStream content) throws IOException, JsonParseException, JsonMappingException;
     }
 }
