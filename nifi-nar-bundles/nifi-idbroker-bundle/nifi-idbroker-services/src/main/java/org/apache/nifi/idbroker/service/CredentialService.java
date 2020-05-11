@@ -45,7 +45,7 @@ public class CredentialService extends AbstractCachingIDBrokerService<Object> {
     }
 
     @Override
-    protected HttpResponse getResource(String url) {
+    protected HttpResponse requestResource(String url) {
         HttpResponse cloudCredentialsResponse = executeGetRequest(
             url,
             new BasicHeader("Authorization", "Bearer " + idBrokerToken.getAccessToken())

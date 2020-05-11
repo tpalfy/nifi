@@ -16,7 +16,7 @@ public class CloudProviders {
         }
 
         @Override
-        public AWSCredentials map(IDBrokerAWSCredentials idBrokerCloudCredentials) {
+        public AWSCredentials mapCredentials(IDBrokerAWSCredentials idBrokerCloudCredentials) {
             final String accessKeyId = idBrokerCloudCredentials.getCredentials().getAccessKeyId();
             final String secretAccessKey = idBrokerCloudCredentials.getCredentials().getSecretAccessKey();
 

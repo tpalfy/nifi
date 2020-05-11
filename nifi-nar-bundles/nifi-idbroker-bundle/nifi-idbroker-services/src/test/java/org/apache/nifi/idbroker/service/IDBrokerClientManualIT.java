@@ -20,6 +20,7 @@ import org.apache.commons.io.IOUtils;
 import org.apache.http.HttpEntity;
 import org.apache.http.HttpResponse;
 import org.apache.http.auth.AuthSchemeProvider;
+import org.apache.http.client.HttpClient;
 import org.apache.http.config.Lookup;
 import org.apache.http.conn.ssl.NoopHostnameVerifier;
 import org.apache.http.conn.ssl.SSLConnectionSocketFactory;
@@ -77,25 +78,30 @@ public class IDBrokerClientManualIT {
             }
 
             @Override
-            HttpResponse requestIDBrokerToken(String idBrokerTokenUrl) {
-                try {
-                    String responseContent = "{" +
-                        "\"access_token\":\"" + ACCESS_TOKEN + "\"," +
-                        "\"endpoint_public_cert\":\"unimportant\"," +
-                        "\"token_type\":\"Bearer\"," +
-                        "\"expires_in\":1211" +
-                        "}";
+            TokenService createTokenService(HttpClient httpClient, String userName, String password, ConfigService configService) {
+                return new TokenService(httpClient, userName, password, configService) {
+                    @Override
+                    protected HttpResponse requestResource(String url) {
+                        try {
+                            String responseContent = "{" +
+                                "\"access_token\":\"" + ACCESS_TOKEN + "\"," +
+                                "\"endpoint_public_cert\":\"unimportant\"," +
+                                "\"token_type\":\"Bearer\"," +
+                                "\"expires_in\":1211" +
+                                "}";
 
-                    HttpResponse response = mock(HttpResponse.class);
-                    HttpEntity entity = mock(HttpEntity.class);
+                            HttpResponse response = mock(HttpResponse.class);
+                            HttpEntity entity = mock(HttpEntity.class);
 
-                    when(response.getEntity()).thenReturn(entity);
-                    when(entity.getContent()).thenReturn(IOUtils.toInputStream(responseContent, StandardCharsets.UTF_8));
+                            when(response.getEntity()).thenReturn(entity);
+                            when(entity.getContent()).thenReturn(IOUtils.toInputStream(responseContent, StandardCharsets.UTF_8));
 
-                    return response;
-                } catch (Exception e) {
-                    throw new RuntimeException(e);
-                }
+                            return response;
+                        } catch (Exception e) {
+                            throw new RuntimeException(e);
+                        }
+                    }
+                };
             }
         };
     }

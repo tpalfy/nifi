@@ -52,7 +52,7 @@ public class TokenService extends AbstractCachingIDBrokerService<IDBrokerToken> 
     }
 
     @Override
-    protected HttpResponse getResource(String url) {
+    protected HttpResponse requestResource(String url) {
         HttpResponse idBrokerTokenResponse = runKerberized(() -> executeGetRequest(url));
 
         return idBrokerTokenResponse;

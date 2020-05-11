@@ -33,7 +33,7 @@ public abstract class AbstractCachingIDBrokerService<R> {
 
     protected abstract String getUrl(CloudProviderHandler<?, ?> cloudProvider);
 
-    protected abstract HttpResponse getResource(String url);
+    protected abstract HttpResponse requestResource(String url);
 
     protected abstract R mapContent(InputStream content, CloudProviderHandler<?, ?> cloudProvider) throws IOException, JsonParseException, JsonMappingException;
 
@@ -52,7 +52,7 @@ public abstract class AbstractCachingIDBrokerService<R> {
 
     protected R getResource(CloudProviderHandler<?, ?> cloudProvider) {
         String url = getUrl(cloudProvider);
-        HttpResponse response = getResource(url);
+        HttpResponse response = requestResource(url);
 
         try (InputStream content = response.getEntity().getContent()) {
             try {
@@ -60,7 +60,7 @@ public abstract class AbstractCachingIDBrokerService<R> {
 
                 return mappedContent;
             } catch (JsonParseException | JsonMappingException e) {
-                HttpResponse errorHttpResponse = getResource(url);
+                HttpResponse errorHttpResponse = requestResource(url);
 
                 String errorResponse = IOUtils.toString(errorHttpResponse.getEntity().getContent(), StandardCharsets.UTF_8);
 
