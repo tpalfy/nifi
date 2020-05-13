@@ -34,6 +34,7 @@ import org.apache.nifi.processor.util.StandardValidators;
 import org.apache.nifi.processors.hadoop.HadoopValidators;
 import org.apache.nifi.reporting.InitializationException;
 
+import javax.security.auth.login.LoginException;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -113,7 +114,11 @@ public class CDPIDBrokerCloudCredentialsProviderControllerService extends Abstra
         String userName = context.getProperty(USER_NAME).evaluateAttributeExpressions().getValue();
         String password = context.getProperty(PASSWORD).evaluateAttributeExpressions().getValue();
 
-        idBrokerClient = createIDBrokerClient(configLocations, userName, password);
+        try {
+            this.idBrokerClient = createIDBrokerClient(configLocations, userName, password);
+        } catch (LoginException e) {
+            throw new InitializationException("Couldn't create IDBrokerClient", e);
+        }
     }
 
     @OnDisabled
@@ -143,8 +148,8 @@ public class CDPIDBrokerCloudCredentialsProviderControllerService extends Abstra
         return credentials;
     }
 
-    IDBrokerClient createIDBrokerClient(String[] configLocations, String userName, String password) {
-        return new IDBrokerClient(userName, password, configLocations);
+    IDBrokerClient createIDBrokerClient(String[] configLocations, String userName, String password) throws LoginException {
+        return new IDBrokerClient(userName, password, getLogger(), configLocations);
     }
 
     @Override

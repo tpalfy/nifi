@@ -18,10 +18,11 @@ package org.apache.nifi.idbroker.service;
 
 import org.apache.nifi.idbroker.domain.CloudProviders;
 import org.apache.nifi.idbroker.domain.IDBrokerToken;
+import org.apache.nifi.security.krb.KerberosUser;
 import org.junit.Before;
 import org.junit.Test;
 
-import java.security.PrivilegedAction;
+import java.security.PrivilegedExceptionAction;
 
 public class TokenServiceTest extends AbstractIDBrokerServiceTest<IDBrokerToken> {
     private TokenService testSubject;
@@ -34,11 +35,24 @@ public class TokenServiceTest extends AbstractIDBrokerServiceTest<IDBrokerToken>
             httpClient,
             "notTestingAuthentication",
             "notTestingAuthentication",
-            new ConfigService("src/test/resources/core-site-local.xml")
+            new ConfigService("src/test/resources/core-site-local.xml"),
+            null
         ) {
             @Override
-            protected <A> A runKerberized(PrivilegedAction<A> privilegedAction) {
-                return privilegedAction.run();
+            protected KerberosUser createAndLoginKerberosUser(String userName, String password) {
+                return null;
+            }
+
+            @Override
+            protected <A> A runKerberized(PrivilegedExceptionAction<A> privilegedAction) {
+                try {
+                    return privilegedAction.run();
+                } catch (RuntimeException e) {
+                    throw e;
+                } catch (Exception e) {
+                    throw new RuntimeException(e);
+                }
+
             }
         };
         expectedUrl = "https://localhost:8444/gateway/dt/knoxtoken/api/v1/token";

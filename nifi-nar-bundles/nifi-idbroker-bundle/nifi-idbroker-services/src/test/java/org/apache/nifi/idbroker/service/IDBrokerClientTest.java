@@ -48,7 +48,7 @@ public class IDBrokerClientTest {
     public void setUp() throws Exception {
         initMocks(this);
 
-        this.testSubject = new IDBrokerClient(null, null, "src/test/resources/core-site-local.xml") {
+        this.testSubject = new IDBrokerClient(null, null, null, "src/test/resources/core-site-local.xml") {
             @Override
             TokenService createTokenService(HttpClient httpClient, String userName, String password, ConfigService configService) {
                 return tokenService;

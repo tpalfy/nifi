@@ -16,7 +16,6 @@
  */
 package org.apache.nifi.idbroker.service;
 
-import com.google.common.annotations.VisibleForTesting;
 import org.apache.http.auth.AuthSchemeProvider;
 import org.apache.http.auth.AuthScope;
 import org.apache.http.client.HttpClient;
@@ -29,7 +28,9 @@ import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.impl.client.HttpClients;
 import org.apache.nifi.idbroker.domain.CloudProviderHandler;
 import org.apache.nifi.idbroker.domain.IDBrokerToken;
+import org.apache.nifi.logging.ComponentLog;
 
+import javax.security.auth.login.LoginException;
 import java.io.IOException;
 import java.security.Principal;
 
@@ -40,16 +41,14 @@ public class IDBrokerClient {
     private final CloseableHttpClient httpClient;
     private final TokenService tokenService;
     private final CredentialService credentialService;
+    private final ComponentLog componentLog;
 
-    public IDBrokerClient(String userName, String password, String... configLocations) {
-        this(userName, password, new ConfigService(configLocations));
-    }
-
-    @VisibleForTesting
-    IDBrokerClient(String userName, String password, ConfigService configService) {
+    public IDBrokerClient(String userName, String password, ComponentLog componentLog, String... configLocations) throws LoginException {
+        ConfigService configService = new ConfigService(configLocations);
         this.httpClient = createHttpClient();
         this.tokenService = createTokenService(httpClient, userName, password, configService);
         this.credentialService = createCredentialService(httpClient, configService);
+        this.componentLog = componentLog;
     }
 
     <I, C> I getCredentials(CloudProviderHandler<I, C> cloudProvider) {
@@ -59,8 +58,8 @@ public class IDBrokerClient {
         return credentials;
     }
 
-    TokenService createTokenService(HttpClient httpClient, String userName, String password, ConfigService configService) {
-        return new TokenService(httpClient, userName, password, configService);
+    TokenService createTokenService(HttpClient httpClient, String userName, String password, ConfigService configService) throws LoginException {
+        return new TokenService(httpClient, userName, password, configService, componentLog);
     }
 
     CredentialService createCredentialService(HttpClient httpClient, ConfigService configService) {

@@ -30,11 +30,13 @@ import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.impl.client.HttpClients;
 import org.apache.http.ssl.SSLContextBuilder;
 import org.apache.nifi.idbroker.domain.aws.Credentials;
+import org.apache.nifi.security.krb.KerberosUser;
 import org.junit.Before;
 import org.junit.Ignore;
 import org.junit.Test;
 
 import javax.net.ssl.SSLContext;
+import javax.security.auth.login.LoginException;
 import java.nio.charset.StandardCharsets;
 
 import static org.apache.nifi.idbroker.domain.CloudProviders.AWS;
@@ -55,7 +57,7 @@ public class IDBrokerClientManualIT {
 
     @Before
     public void setUp() throws Exception {
-        this.testSubject = new IDBrokerClient(null, null, "src/test/resources/core-site-local.xml") {
+        this.testSubject = new IDBrokerClient(null, null, null, "src/test/resources/core-site-local.xml") {
             @Override
             CloseableHttpClient createHttpClient(BasicCredentialsProvider credentialsProvider, Lookup<AuthSchemeProvider> authSchemeRegistry) {
                 try {
@@ -78,8 +80,13 @@ public class IDBrokerClientManualIT {
             }
 
             @Override
-            TokenService createTokenService(HttpClient httpClient, String userName, String password, ConfigService configService) {
-                return new TokenService(httpClient, userName, password, configService) {
+            TokenService createTokenService(HttpClient httpClient, String userName, String password, ConfigService configService) throws LoginException {
+                return new TokenService(httpClient, userName, password, configService, null) {
+                    @Override
+                    protected KerberosUser createAndLoginKerberosUser(String userName, String password) {
+                        return null;
+                    }
+
                     @Override
                     protected HttpResponse requestResource(String url) {
                         try {

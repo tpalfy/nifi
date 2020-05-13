@@ -7,35 +7,31 @@ import org.apache.http.HttpResponse;
 import org.apache.http.client.HttpClient;
 import org.apache.nifi.idbroker.domain.CloudProviderHandler;
 import org.apache.nifi.idbroker.domain.IDBrokerToken;
-import org.apache.nifi.processor.exception.ProcessException;
+import org.apache.nifi.logging.ComponentLog;
+import org.apache.nifi.security.krb.KerberosAction;
+import org.apache.nifi.security.krb.KerberosPasswordUser;
+import org.apache.nifi.security.krb.KerberosUser;
 
-import javax.security.auth.Subject;
-import javax.security.auth.callback.Callback;
-import javax.security.auth.callback.CallbackHandler;
-import javax.security.auth.callback.NameCallback;
-import javax.security.auth.callback.PasswordCallback;
-import javax.security.auth.login.AppConfigurationEntry;
-import javax.security.auth.login.Configuration;
-import javax.security.auth.login.LoginContext;
 import javax.security.auth.login.LoginException;
 import java.io.IOException;
 import java.io.InputStream;
-import java.security.PrivilegedAction;
-import java.util.HashMap;
+import java.security.PrivilegedExceptionAction;
 import java.util.StringJoiner;
 
 import static org.apache.nifi.idbroker.service.ConfigService.IDBROKER_TOKEN_ENDPOINT;
 
 public class TokenService extends AbstractCachingIDBrokerService<IDBrokerToken> {
-    private final String userName;
-    private final String password;
     private final ConfigService configService;
+    private final ComponentLog componentLog;
 
-    public TokenService(HttpClient httpClient, String userName, String password, ConfigService configService) {
+    private final KerberosUser kerberosUser;
+
+    public TokenService(HttpClient httpClient, String userName, String password, ConfigService configService, ComponentLog componentLog) throws LoginException {
         super(httpClient);
-        this.userName = userName;
-        this.password = password;
         this.configService = configService;
+        this.componentLog = componentLog;
+
+        this.kerberosUser = createAndLoginKerberosUser(userName, password);
     }
 
     @Override
@@ -68,41 +64,15 @@ public class TokenService extends AbstractCachingIDBrokerService<IDBrokerToken> 
         return expired(resource.getExpiresIn());
     }
 
-    protected <A> A runKerberized(PrivilegedAction<A> privilegedAction) {
-        try {
-            Subject subject = new Subject();
+    protected KerberosUser createAndLoginKerberosUser(String userName, String password) throws LoginException {
+        KerberosUser kerberosUser = new KerberosPasswordUser(userName, password);
+        kerberosUser.login();
 
-            CallbackHandler callbackHandler = callbacks -> {
-                for (Callback callback : callbacks) {
-                    if (callback instanceof NameCallback) {
-                        ((NameCallback) callback).setName(userName);
-                    }
-                    if (callback instanceof PasswordCallback) {
-                        ((PasswordCallback) callback).setPassword(password.toCharArray());
-                    }
-                }
-            };
+        return kerberosUser;
+    }
 
-            Configuration loginConfig = new Configuration() {
-                @Override
-                public AppConfigurationEntry[] getAppConfigurationEntry(String name) {
-                    return new AppConfigurationEntry[]{
-                        new AppConfigurationEntry(
-                            "com.sun.security.auth.module.Krb5LoginModule",
-                            AppConfigurationEntry.LoginModuleControlFlag.REQUIRED,
-                            new HashMap<>()
-                        )
-                    };
-                }
-            };
-            LoginContext loginContext = new LoginContext("", subject, callbackHandler, loginConfig);
-            loginContext.login();
-
-            Subject serviceSubject = loginContext.getSubject();
-
-            return Subject.doAs(serviceSubject, privilegedAction);
-        } catch (LoginException e) {
-            throw new ProcessException("Kerberos authentication error for user '" + userName + "'", e);
-        }
+    protected <A> A runKerberized(PrivilegedExceptionAction<A> privilegedAction) {
+        return new KerberosAction<>(kerberosUser, privilegedAction, componentLog)
+            .execute();
     }
 }
