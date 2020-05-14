@@ -1,8 +1,10 @@
 package org.apache.nifi.idbroker.service;
 
 import org.apache.nifi.idbroker.domain.RetryableCommunicationException;
+import org.apache.nifi.logging.ComponentLog;
 import org.junit.Before;
 import org.junit.Test;
+import org.mockito.Mock;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -13,10 +15,17 @@ import java.util.function.BiConsumer;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.fail;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.Mockito.doAnswer;
+import static org.mockito.Mockito.when;
 import static org.mockito.MockitoAnnotations.initMocks;
 
-public class TestTenacious {
-    private Tenacious testSubject;
+public class TestRetryService {
+    private RetryService testSubject;
+
+    @Mock
+    private ComponentLog logger;
 
     private List<String> actualErrorMessages;
     private List<Throwable> actualSkippedExceptions;
@@ -25,15 +34,16 @@ public class TestTenacious {
     public void setUp() throws Exception {
         initMocks(this);
 
-        this.testSubject = new Tenacious() {
-            @Override
-            public BiConsumer<String, Throwable> getErrorLogging() {
-                return (errorMessage, throwable) -> {
-                    actualErrorMessages.add(errorMessage);
-                    actualSkippedExceptions.add(throwable);
-                };
-            }
-        };
+        this.testSubject = new RetryService(logger);
+
+        doAnswer(invocation -> {
+            String errorMessage = invocation.getArgument(0, String.class);
+            Throwable throwable = invocation.getArgument(1, Throwable.class);
+            actualErrorMessages.add(errorMessage);
+            actualSkippedExceptions.add(throwable);
+
+            return null;
+        }).when(logger).error(anyString(), any(Throwable.class));
 
         this.actualErrorMessages = new ArrayList<>();
         this.actualSkippedExceptions = new ArrayList<>();

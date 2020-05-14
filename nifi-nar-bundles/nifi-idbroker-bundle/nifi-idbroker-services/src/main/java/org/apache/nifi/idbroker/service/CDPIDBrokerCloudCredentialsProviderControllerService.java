@@ -51,9 +51,9 @@ import java.util.function.BiConsumer;
  * @see CloudCredentialsProviderControllerService
  */
 @CapabilityDescription("Retrieves cloud credentials from an IDBroker server based on a provided configuration file that contains the IDBroker-relates settings (urls) and using a kerberos username/password.")
-@Tags({ "cloud", "credentials","provider" })
+@Tags({ "cloud", "credentials", "provider" })
 @RequiresInstanceClassLoading
-public class CDPIDBrokerCloudCredentialsProviderControllerService extends AbstractControllerService implements CloudCredentialsProviderControllerService, Tenacious {
+public class CDPIDBrokerCloudCredentialsProviderControllerService extends AbstractControllerService implements CloudCredentialsProviderControllerService {
     private static final List<PropertyDescriptor> PROPERTIES;
 
     public static final PropertyDescriptor CONFIGURATION_RESOURCES = new PropertyDescriptor.Builder()
@@ -102,6 +102,7 @@ public class CDPIDBrokerCloudCredentialsProviderControllerService extends Abstra
     }
 
     private IDBrokerClient idBrokerClient;
+    private RetryService retryService;
 
     @Override
     protected List<PropertyDescriptor> getSupportedPropertyDescriptors() {
@@ -119,6 +120,8 @@ public class CDPIDBrokerCloudCredentialsProviderControllerService extends Abstra
         } catch (LoginException e) {
             throw new InitializationException("Couldn't create IDBrokerClient", e);
         }
+
+        this.retryService = new RetryService(getLogger());
     }
 
     @OnDisabled
@@ -130,7 +133,7 @@ public class CDPIDBrokerCloudCredentialsProviderControllerService extends Abstra
 
     @Override
     public <C> C getCredentials(Class<C> nativeCredentialsType) {
-        C credentials = tryAction(() -> getCredentialsFromIDBroker(nativeCredentialsType), 3, 10_000);
+        C credentials = retryService.tryAction(() -> getCredentialsFromIDBroker(nativeCredentialsType), 3, 10_000);
 
         return credentials;
     }
@@ -157,10 +160,5 @@ public class CDPIDBrokerCloudCredentialsProviderControllerService extends Abstra
         return new StringJoiner(", ", CDPIDBrokerCloudCredentialsProviderControllerService.class.getSimpleName() + "[", "]")
             .add("idBrokerClient=" + Optional.ofNullable(idBrokerClient.toString()).orElse("N/A"))
             .toString();
-    }
-
-    @Override
-    public BiConsumer<String, Throwable> getErrorLogging() {
-        return getLogger()::error;
     }
 }

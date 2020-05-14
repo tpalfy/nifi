@@ -1,13 +1,19 @@
 package org.apache.nifi.idbroker.service;
 
 import org.apache.nifi.idbroker.domain.RetryableCommunicationException;
+import org.apache.nifi.logging.ComponentLog;
 
 import java.util.concurrent.TimeUnit;
-import java.util.function.BiConsumer;
 import java.util.function.Supplier;
 
-public interface Tenacious {
-    default <R> R tryAction(Supplier<R> supplier, int maxTries, long waitBeforeRetryMs) {
+public class RetryService {
+    private final ComponentLog logger;
+
+    public RetryService(ComponentLog logger) {
+        this.logger = logger;
+    }
+
+    public <R> R tryAction(Supplier<R> supplier, int maxTries, long waitBeforeRetryMs) {
         int counter = 1;
 
         while (true) {
@@ -19,7 +25,7 @@ public interface Tenacious {
                 if (++counter > maxTries) {
                     throw e;
                 } else {
-                    getErrorLogging().accept("Retryable action threw " + e.getClass().getSimpleName(), e);
+                    logger.error("Retryable action threw " + e.getClass().getSimpleName(), e);
                     try {
                         TimeUnit.MILLISECONDS.sleep(waitBeforeRetryMs);
                     } catch (InterruptedException ie) {
@@ -29,6 +35,4 @@ public interface Tenacious {
             }
         }
     }
-
-    BiConsumer<String, Throwable> getErrorLogging();
 }

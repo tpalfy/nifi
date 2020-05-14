@@ -351,6 +351,18 @@ language governing permissions and limitations under the License. -->
         </dependency>
         <dependency>
             <groupId>org.apache.nifi</groupId>
+            <artifactId>nifi-cloudcredential-service-api-nar</artifactId>
+            <version>1.12.0-SNAPSHOT</version>
+            <type>nar</type>
+        </dependency>
+        <dependency>
+            <groupId>org.apache.nifi</groupId>
+            <artifactId>nifi-idbroker-services-nar</artifactId>
+            <version>1.12.0-SNAPSHOT</version>
+            <type>nar</type>
+        </dependency>
+        <dependency>
+            <groupId>org.apache.nifi</groupId>
             <artifactId>nifi-ambari-nar</artifactId>
             <version>1.12.0-SNAPSHOT</version>
             <type>nar</type>

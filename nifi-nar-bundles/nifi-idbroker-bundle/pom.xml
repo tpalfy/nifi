@@ -25,9 +25,9 @@
 
     <artifactId>nifi-idbroker-bundle</artifactId>
     <packaging>pom</packaging>
+
     <modules>
         <module>nifi-idbroker-services</module>
+        <module>nifi-idbroker-services-nar</module>
     </modules>
-
-
 </project>
