@@ -41,14 +41,13 @@ public class IDBrokerClient {
     private final CloseableHttpClient httpClient;
     private final TokenService tokenService;
     private final CredentialService credentialService;
-    private final ComponentLog componentLog;
 
     public IDBrokerClient(String userName, String password, ComponentLog componentLog, String... configLocations) throws LoginException {
         ConfigService configService = new ConfigService(configLocations);
+
         this.httpClient = createHttpClient();
-        this.tokenService = createTokenService(httpClient, userName, password, configService);
+        this.tokenService = createTokenService(httpClient, userName, password, componentLog, configService);
         this.credentialService = createCredentialService(httpClient, configService);
-        this.componentLog = componentLog;
     }
 
     <I, C> I getCredentials(CloudProviderHandler<I, C> cloudProvider) {
@@ -58,7 +57,7 @@ public class IDBrokerClient {
         return credentials;
     }
 
-    TokenService createTokenService(HttpClient httpClient, String userName, String password, ConfigService configService) throws LoginException {
+    TokenService createTokenService(HttpClient httpClient, String userName, String password, ComponentLog componentLog, ConfigService configService) throws LoginException {
         return new TokenService(httpClient, userName, password, configService, componentLog);
     }
 

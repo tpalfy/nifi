@@ -30,6 +30,7 @@ import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.impl.client.HttpClients;
 import org.apache.http.ssl.SSLContextBuilder;
 import org.apache.nifi.idbroker.domain.aws.Credentials;
+import org.apache.nifi.logging.ComponentLog;
 import org.apache.nifi.security.krb.KerberosUser;
 import org.junit.Before;
 import org.junit.Ignore;
@@ -80,7 +81,7 @@ public class IDBrokerClientManualIT {
             }
 
             @Override
-            TokenService createTokenService(HttpClient httpClient, String userName, String password, ConfigService configService) throws LoginException {
+            TokenService createTokenService(HttpClient httpClient, String userName, String password, ComponentLog componentLog, ConfigService configService) throws LoginException {
                 return new TokenService(httpClient, userName, password, configService, null) {
                     @Override
                     protected KerberosUser createAndLoginKerberosUser(String userName, String password) {

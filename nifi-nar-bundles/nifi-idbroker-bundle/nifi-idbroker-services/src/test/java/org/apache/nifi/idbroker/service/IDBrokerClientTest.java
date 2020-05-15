@@ -23,6 +23,7 @@ import org.apache.http.impl.client.BasicCredentialsProvider;
 import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.nifi.idbroker.domain.CloudProviderHandler;
 import org.apache.nifi.idbroker.domain.IDBrokerToken;
+import org.apache.nifi.logging.ComponentLog;
 import org.junit.Before;
 import org.junit.Test;
 import org.mockito.Mock;
@@ -50,7 +51,7 @@ public class IDBrokerClientTest {
 
         this.testSubject = new IDBrokerClient(null, null, null, "src/test/resources/core-site-local.xml") {
             @Override
-            TokenService createTokenService(HttpClient httpClient, String userName, String password, ConfigService configService) {
+            TokenService createTokenService(HttpClient httpClient, String userName, String password, ComponentLog componentLog, ConfigService configService) {
                 return tokenService;
             }
 

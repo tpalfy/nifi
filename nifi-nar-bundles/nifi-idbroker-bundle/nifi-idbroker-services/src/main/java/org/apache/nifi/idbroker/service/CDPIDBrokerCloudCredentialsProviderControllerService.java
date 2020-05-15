@@ -43,14 +43,14 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.StringJoiner;
-import java.util.function.BiConsumer;
 
 /**
  * Retrieves cloud credentials from an IDBroker server
  *
  * @see CloudCredentialsProviderControllerService
  */
-@CapabilityDescription("Retrieves cloud credentials from an IDBroker server based on a provided configuration file that contains the IDBroker-relates settings (urls) and using a kerberos username/password.")
+@CapabilityDescription("Retrieves cloud credentials from an IDBroker server based on a provided configuration file" +
+    " that contains the IDBroker-relates settings (urls) and using a kerberos username/password.")
 @Tags({ "cloud", "credentials", "provider" })
 @RequiresInstanceClassLoading
 public class CDPIDBrokerCloudCredentialsProviderControllerService extends AbstractControllerService implements CloudCredentialsProviderControllerService {
@@ -92,6 +92,7 @@ public class CDPIDBrokerCloudCredentialsProviderControllerService extends Abstra
 
     static {
         final List<PropertyDescriptor> properties = new ArrayList<>();
+        properties.add(CONFIGURATION_RESOURCES);
         properties.add(USER_NAME);
         properties.add(PASSWORD);
         PROPERTIES = Collections.unmodifiableList(properties);
@@ -158,7 +159,7 @@ public class CDPIDBrokerCloudCredentialsProviderControllerService extends Abstra
     @Override
     public String toString() {
         return new StringJoiner(", ", CDPIDBrokerCloudCredentialsProviderControllerService.class.getSimpleName() + "[", "]")
-            .add("idBrokerClient=" + Optional.ofNullable(idBrokerClient.toString()).orElse("N/A"))
+            .add("idBrokerClient=" + Optional.ofNullable(idBrokerClient).map(Object::toString).orElse("N/A"))
             .toString();
     }
 }
