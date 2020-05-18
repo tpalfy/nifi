@@ -90,7 +90,7 @@ public class MockPutKudu extends PutKudu {
     }
 
     @Override
-    protected KerberosUser loginKerberosUser(final String principal, final String keytab) throws LoginException {
+    protected KerberosUser loginKerberosUser(final String principal, final String keytab, String masters) throws LoginException {
         return new KerberosUser() {
 
             @Override

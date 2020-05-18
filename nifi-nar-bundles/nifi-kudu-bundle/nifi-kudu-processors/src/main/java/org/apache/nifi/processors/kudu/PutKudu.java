@@ -241,7 +241,7 @@ public class PutKudu extends AbstractProcessor {
 
         final String keytab = credentialsService.getKeytab();
         final String principal = credentialsService.getPrincipal();
-        kerberosUser = loginKerberosUser(principal, keytab);
+        kerberosUser = loginKerberosUser(principal, keytab, masters);
 
         final KerberosAction<KuduClient> kerberosAction = new KerberosAction<>(kerberosUser, () -> buildClient(masters), getLogger());
         return kerberosAction.execute();
@@ -251,8 +251,20 @@ public class PutKudu extends AbstractProcessor {
         return new KuduClient.KuduClientBuilder(masters).build();
     }
 
-    protected KerberosUser loginKerberosUser(final String principal, final String keytab) throws LoginException {
-        final KerberosUser kerberosUser = new KerberosKeytabUser(principal, keytab);
+    protected KerberosUser loginKerberosUser(final String principal, final String keytab, String masters) throws LoginException {
+        final KerberosUser kerberosUser = new KerberosKeytabUser(principal, keytab){
+            @Override
+            public synchronized boolean checkTGTAndRelogin() throws LoginException {
+                boolean didRelogin = super.checkTGTAndRelogin();
+
+                if (didRelogin) {
+                    final KerberosAction<KuduClient> kerberosAction = new KerberosAction<>(this, () -> buildClient(masters), getLogger());
+                    PutKudu.this.kuduClient = kerberosAction.execute();
+                }
+
+                return didRelogin;
+            }
+        };
         kerberosUser.login();
         return kerberosUser;
     }
