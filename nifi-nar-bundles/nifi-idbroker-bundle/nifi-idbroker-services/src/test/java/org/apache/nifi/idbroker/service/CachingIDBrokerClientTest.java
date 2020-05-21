@@ -32,8 +32,8 @@ import static org.junit.Assert.assertEquals;
 import static org.mockito.Mockito.when;
 import static org.mockito.MockitoAnnotations.initMocks;
 
-public class IDBrokerClientTest {
-    private IDBrokerClient testSubject;
+public class CachingIDBrokerClientTest {
+    private CachingIDBrokerClient testSubject;
 
     @Mock
     private TokenService tokenService;
@@ -49,7 +49,7 @@ public class IDBrokerClientTest {
     public void setUp() throws Exception {
         initMocks(this);
 
-        this.testSubject = new IDBrokerClient(null, null, null, "src/test/resources/core-site-local.xml") {
+        this.testSubject = new CachingIDBrokerClient(null, null, null, "src/test/resources/core-site-local.xml") {
             @Override
             TokenService createTokenService(HttpClient httpClient, String userName, String password, ComponentLog componentLog, ConfigService configService) {
                 return tokenService;

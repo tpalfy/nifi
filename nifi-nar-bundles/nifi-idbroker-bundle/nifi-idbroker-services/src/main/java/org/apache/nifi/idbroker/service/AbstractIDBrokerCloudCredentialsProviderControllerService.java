@@ -16,20 +16,12 @@
  */
 package org.apache.nifi.idbroker.service;
 
-import com.amazonaws.auth.AWSCredentials;
-import org.apache.nifi.annotation.behavior.RequiresInstanceClassLoading;
-import org.apache.nifi.annotation.documentation.CapabilityDescription;
-import org.apache.nifi.annotation.documentation.Tags;
 import org.apache.nifi.annotation.lifecycle.OnDisabled;
 import org.apache.nifi.annotation.lifecycle.OnEnabled;
-import org.apache.nifi.cloudcredential.service.CloudCredentialsProviderControllerService;
 import org.apache.nifi.components.PropertyDescriptor;
 import org.apache.nifi.controller.AbstractControllerService;
 import org.apache.nifi.controller.ConfigurationContext;
 import org.apache.nifi.expression.ExpressionLanguageScope;
-import org.apache.nifi.idbroker.domain.CloudProviderHandler;
-import org.apache.nifi.idbroker.domain.CloudProviders;
-import org.apache.nifi.processor.exception.ProcessException;
 import org.apache.nifi.processor.util.StandardValidators;
 import org.apache.nifi.processors.hadoop.HadoopValidators;
 import org.apache.nifi.reporting.InitializationException;
@@ -38,22 +30,14 @@ import javax.security.auth.login.LoginException;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collections;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 import java.util.Optional;
 import java.util.StringJoiner;
 
 /**
- * Retrieves cloud credentials from an IDBroker server
- *
- * @see CloudCredentialsProviderControllerService
+ * Abstract service for retrieving cloud credentials from an IDBroker server
  */
-@CapabilityDescription("Retrieves cloud credentials from an IDBroker server based on a provided configuration file" +
-    " that contains the IDBroker-relates settings (urls) and using a kerberos username/password.")
-@Tags({ "cloud", "credentials", "provider" })
-@RequiresInstanceClassLoading
-public class CDPIDBrokerCloudCredentialsProviderControllerService extends AbstractControllerService implements CloudCredentialsProviderControllerService {
+public abstract class AbstractIDBrokerCloudCredentialsProviderControllerService extends AbstractControllerService {
     private static final List<PropertyDescriptor> PROPERTIES;
 
     public static final PropertyDescriptor CONFIGURATION_RESOURCES = new PropertyDescriptor.Builder()
@@ -84,26 +68,16 @@ public class CDPIDBrokerCloudCredentialsProviderControllerService extends Abstra
         .description("Password for the Kerberos user name to use for accessing the IDBroker server")
         .build();
 
-
-    private static final Map<Object, CloudProviderHandler> SUPPORTED_CLOUD_PROVIDERS;
-    private static <I, C> void addSupportedCredentials(Map<Object, CloudProviderHandler> tmpSupportedCloudProviders, Class<C> nativeCredentialsType, CloudProviderHandler<I, C> cloudProviderHandler) {
-        tmpSupportedCloudProviders.put(nativeCredentialsType, cloudProviderHandler);
-    }
-
     static {
         final List<PropertyDescriptor> properties = new ArrayList<>();
         properties.add(CONFIGURATION_RESOURCES);
         properties.add(USER_NAME);
         properties.add(PASSWORD);
         PROPERTIES = Collections.unmodifiableList(properties);
-
-        Map<Object, CloudProviderHandler> tmpSupportedCloudProviders = new HashMap<>();
-        addSupportedCredentials(tmpSupportedCloudProviders, AWSCredentials.class, CloudProviders.AWS);
-        SUPPORTED_CLOUD_PROVIDERS = Collections.unmodifiableMap(tmpSupportedCloudProviders);
     }
 
-    private IDBrokerClient idBrokerClient;
-    private RetryService retryService;
+    protected CachingIDBrokerClient idBrokerClient;
+    protected RetryService retryService;
 
     @Override
     protected List<PropertyDescriptor> getSupportedPropertyDescriptors() {
@@ -132,33 +106,13 @@ public class CDPIDBrokerCloudCredentialsProviderControllerService extends Abstra
         }
     }
 
-    @Override
-    public <C> C getCredentials(Class<C> nativeCredentialsType) {
-        C credentials = retryService.tryAction(() -> getCredentialsFromIDBroker(nativeCredentialsType), 3, 10_000);
-
-        return credentials;
-    }
-
-    private <I, C> C getCredentialsFromIDBroker(Class<C> nativeCredentialsType) {
-        C credentials;
-
-        CloudProviderHandler<I, C> cloudProviderHandler = (CloudProviderHandler<I, C>) SUPPORTED_CLOUD_PROVIDERS.get(nativeCredentialsType);
-        if (cloudProviderHandler != null) {
-            credentials = cloudProviderHandler.mapCredentials(idBrokerClient.getCredentials(cloudProviderHandler));
-        } else {
-            throw new ProcessException("Unsupported credentials type: " + nativeCredentialsType.getName());
-        }
-
-        return credentials;
-    }
-
-    IDBrokerClient createIDBrokerClient(String[] configLocations, String userName, String password) throws LoginException {
-        return new IDBrokerClient(userName, password, getLogger(), configLocations);
+    protected CachingIDBrokerClient createIDBrokerClient(String[] configLocations, String userName, String password) throws LoginException {
+        return new CachingIDBrokerClient(userName, password, getLogger(), configLocations);
     }
 
     @Override
     public String toString() {
-        return new StringJoiner(", ", CDPIDBrokerCloudCredentialsProviderControllerService.class.getSimpleName() + "[", "]")
+        return new StringJoiner(", ", this.getClass().getSimpleName() + "[", "]")
             .add("idBrokerClient=" + Optional.ofNullable(idBrokerClient).map(Object::toString).orElse("N/A"))
             .toString();
     }

@@ -14,36 +14,35 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.apache.nifi.idbroker.service;
+package org.apache.nifi.idbroker.service.aws;
 
 import com.amazonaws.auth.AWSCredentials;
 import org.apache.nifi.controller.ConfigurationContext;
-import org.apache.nifi.idbroker.domain.CloudProviderHandler;
 import org.apache.nifi.idbroker.domain.CloudProviders;
 import org.apache.nifi.idbroker.domain.aws.Credentials;
 import org.apache.nifi.idbroker.domain.aws.IDBrokerAWSCredentials;
-import org.apache.nifi.processor.exception.ProcessException;
+import org.apache.nifi.idbroker.service.CachingIDBrokerClient;
+import org.apache.nifi.idbroker.service.Equalizer;
 import org.junit.Before;
 import org.junit.Test;
 import org.mockito.Mock;
 
 import java.util.Arrays;
-import java.util.Collections;
 import java.util.List;
 import java.util.function.Function;
 
-import static org.apache.nifi.idbroker.service.CDPIDBrokerCloudCredentialsProviderControllerService.CONFIGURATION_RESOURCES;
+import static org.apache.nifi.idbroker.service.AbstractIDBrokerCloudCredentialsProviderControllerService.CONFIGURATION_RESOURCES;
 import static org.junit.Assert.assertEquals;
 import static org.mockito.Mockito.RETURNS_DEEP_STUBS;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 import static org.mockito.MockitoAnnotations.initMocks;
 
-public class CDPIDBrokerCloudCredentialsProviderControllerServiceTest {
-    private CDPIDBrokerCloudCredentialsProviderControllerService testSubject;
+public class AWSIDBrokerCloudCredentialsProviderControllerServiceTest {
+    private AWSIDBrokerCloudCredentialsProviderControllerService testSubject;
 
     @Mock
-    private IDBrokerClient idBrokerClient;
+    private CachingIDBrokerClient mockIdBrokerClient;
 
     private ConfigurationContext context;
 
@@ -51,10 +50,10 @@ public class CDPIDBrokerCloudCredentialsProviderControllerServiceTest {
     public void setUp() throws Exception {
         initMocks(this);
 
-        this.testSubject = new CDPIDBrokerCloudCredentialsProviderControllerService() {
+        this.testSubject = new AWSIDBrokerCloudCredentialsProviderControllerService() {
             @Override
-            IDBrokerClient createIDBrokerClient(String[] configLocations, String userName, String password) {
-                return idBrokerClient;
+            protected CachingIDBrokerClient createIDBrokerClient(String[] configLocations, String userName, String password) {
+                return mockIdBrokerClient;
             }
         };
 
@@ -63,28 +62,6 @@ public class CDPIDBrokerCloudCredentialsProviderControllerServiceTest {
         when(context.getProperty(CONFIGURATION_RESOURCES).evaluateAttributeExpressions().getValue()).thenReturn("unimportant");
 
         this.testSubject.init(context);
-    }
-
-    @Test
-    public void testGetCredentialsThrowsExceptionWhenCloudProviderHandlerNotSupported() throws Exception {
-        // GIVEN
-        String credentials = "credentials";
-
-        CloudProviderHandler<Object, String> unsupportedCloudProviderHandler = mock(CloudProviderHandler.class);
-
-        when(idBrokerClient.getCredentials(unsupportedCloudProviderHandler)).thenReturn(credentials);
-
-        // WHEN
-        try {
-            testGetCredentials(
-                String.class,
-                "N/A",
-                Collections.emptyList()
-            );
-        } catch (ProcessException e) {
-            // THEN
-            assertEquals("Unsupported credentials type: " + String.class.getName(), e.getMessage());
-        }
     }
 
     @Test
@@ -111,12 +88,11 @@ public class CDPIDBrokerCloudCredentialsProviderControllerServiceTest {
                 return secretKey;
             }
         };
-        when(idBrokerClient.getCredentials(CloudProviders.AWS)).thenReturn(idBrokerAWSCredentials);
+        when(mockIdBrokerClient.getCredentials(CloudProviders.AWS)).thenReturn(idBrokerAWSCredentials);
 
         // WHEN
         // THEN
         testGetCredentials(
-            AWSCredentials.class,
             expected,
             Arrays.asList(
                 AWSCredentials::getAWSAccessKeyId,
@@ -125,11 +101,11 @@ public class CDPIDBrokerCloudCredentialsProviderControllerServiceTest {
         );
     }
 
-    public <C> void testGetCredentials(Class<C> nativeCredentialsType, C expected, List<Function<C, Object>> equalsPropertyProviders) {
+    public <C> void testGetCredentials(AWSCredentials expected, List<Function<AWSCredentials, Object>> equalsPropertyProviders) {
         // GIVEN
 
         // WHEN
-        C actual = testSubject.getCredentials(nativeCredentialsType);
+        AWSCredentials actual = testSubject.getCredentialsProvider().getCredentials();
 
         // THEN
 

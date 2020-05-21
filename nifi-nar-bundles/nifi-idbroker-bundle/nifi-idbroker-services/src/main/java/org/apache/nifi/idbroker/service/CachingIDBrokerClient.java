@@ -37,12 +37,12 @@ import java.security.Principal;
 import static org.apache.http.auth.AuthScope.ANY_HOST;
 import static org.apache.http.auth.AuthScope.ANY_PORT;
 
-public class IDBrokerClient {
+public class CachingIDBrokerClient {
     private final CloseableHttpClient httpClient;
     private final TokenService tokenService;
     private final CredentialService credentialService;
 
-    public IDBrokerClient(String userName, String password, ComponentLog componentLog, String... configLocations) throws LoginException {
+    public CachingIDBrokerClient(String userName, String password, ComponentLog componentLog, String... configLocations) throws LoginException {
         ConfigService configService = new ConfigService(configLocations);
 
         this.httpClient = createHttpClient();
@@ -50,11 +50,16 @@ public class IDBrokerClient {
         this.credentialService = createCredentialService(httpClient, configService);
     }
 
-    <I, C> I getCredentials(CloudProviderHandler<I, C> cloudProvider) {
+    public <I, C> I getCredentials(CloudProviderHandler<I, C> cloudProvider) {
         IDBrokerToken idBrokerToken = tokenService.getCachedResource(cloudProvider);
         I credentials = credentialService.getCachedCloudCredentials(cloudProvider, idBrokerToken);
 
         return credentials;
+    }
+
+    public void clearCache() {
+        credentialService.clearCache();
+        tokenService.clearCache();
     }
 
     TokenService createTokenService(HttpClient httpClient, String userName, String password, ComponentLog componentLog, ConfigService configService) throws LoginException {

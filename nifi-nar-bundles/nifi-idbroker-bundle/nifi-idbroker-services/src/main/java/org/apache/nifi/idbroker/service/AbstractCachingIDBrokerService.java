@@ -35,13 +35,15 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
 import java.util.HashMap;
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 
 public abstract class AbstractCachingIDBrokerService<R> {
     private static final long CACHE_RENEW_TIME_THRESHOLD_MS = 15 * 60 * 1000;
 
     private final HttpClient httpClient;
 
-    private final HashMap<CloudProviderHandler<?, ?>, R> cache = new HashMap<>();
+    private final Map<CloudProviderHandler<?, ?>, R> cache = new ConcurrentHashMap<>();
 
     protected AbstractCachingIDBrokerService(HttpClient httpClient) {
         this.httpClient = httpClient;
@@ -64,6 +66,10 @@ public abstract class AbstractCachingIDBrokerService<R> {
         }
 
         return resource;
+    }
+
+    public void clearCache() {
+        cache.clear();
     }
 
     protected R getResource(CloudProviderHandler<?, ?> cloudProvider) {

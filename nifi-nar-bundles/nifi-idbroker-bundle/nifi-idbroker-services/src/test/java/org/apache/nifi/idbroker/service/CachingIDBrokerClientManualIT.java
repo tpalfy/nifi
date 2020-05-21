@@ -46,7 +46,7 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
 @Ignore("Manual test")
-public class IDBrokerClientManualIT {
+public class CachingIDBrokerClientManualIT {
     private static final String ACCESS_TOKEN =
         "eyJhbGciOiJSUzI1NiJ9.eyJzdWIiOiJjc3NvX3RwYWxmeSIsImF1ZCI6ImlkYnJva2VyIiwiaXNzIjoiS05PWFNTTyIsImV4cCI6MTU4OTMwMzg1NH0.QwVa0YxDZm0M2JseXgd" +
         "YpcLdHHcIM5swiM-1A67Uu5Fm4gM7cW_aOpCIGrT73jSKdPAE31ykBMpUXiau6j2f7KGN2NHqB7G-30v4qcluQo4th0zegNSBgM6efwRxguUfyaOBz8stTZASDHwNJC6p79vSET2" +
@@ -54,11 +54,11 @@ public class IDBrokerClientManualIT {
         "u_tsxyXvSNWQu4YGsZQcQj1c_uPVS-Vx8Cs0FpmxLtpqKmdOi1KiO3jGudhJlkdovgQbw7h2qTILUzNLeg5PmGYYdAM0Cpk73I1iMOc1ncT8WrV8AdsY0nAZBy8DoXyQnjsFLLiL" +
         "_gHdBjnxiBi0MnqodS3_LFcLwdcoCFP-Di6k1MUnAMljLqrsToY6pnqYRcZXePsyxcXV4UATA4LMspyi_GZeu";
 
-    private IDBrokerClient testSubject;
+    private CachingIDBrokerClient testSubject;
 
     @Before
     public void setUp() throws Exception {
-        this.testSubject = new IDBrokerClient(null, null, null, "src/test/resources/core-site-local.xml") {
+        this.testSubject = new CachingIDBrokerClient(null, null, null, "src/test/resources/core-site-local.xml") {
             @Override
             CloseableHttpClient createHttpClient(BasicCredentialsProvider credentialsProvider, Lookup<AuthSchemeProvider> authSchemeRegistry) {
                 try {
