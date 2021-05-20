@@ -14,24 +14,27 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.apache.nifi.snmp.operations;
+package org.apache.nifi.snmp.helper.configurations;
 
-import org.apache.nifi.flowfile.FlowFile;
-import org.apache.nifi.snmp.configuration.TrapConfiguration;
-import org.apache.nifi.snmp.dto.SNMPSingleResponse;
-import org.apache.nifi.snmp.dto.SNMPTreeResponse;
+import org.apache.nifi.snmp.configuration.SNMPConfiguration;
 
-import java.io.IOException;
+public interface SNMPConfigurations {
 
-public interface SNMPRequestHandler {
+    String DEFAULT_HOST = "127.0.0.1";
+    String COMMUNITY_STRING = "public";
 
-    SNMPSingleResponse get(final String oid) throws IOException;
+    // V3 security (users are set in test agents)
+    String SECURITY_LEVEL = "authPriv";
+    String SECURITY_NAME = "SHAAES128";
+    String AUTH_PROTOCOL = "SHA";
+    String AUTH_PASSPHRASE = "SHAAES128AuthPassphrase";
+    String PRIV_PROTOCOL = "AES128";
+    String PRIV_PASSPHRASE = "SHAAES128PrivPassphrase";
 
-    SNMPTreeResponse walk(final String oid);
+    SNMPConfiguration createSnmpGetSetConfiguration(int agentPort);
 
-    SNMPSingleResponse set(final FlowFile flowfile) throws IOException;
+    SNMPConfiguration createSnmpGetSetConfigWithCustomHost(final String host, final int agentPort);
 
-    void sendTrap(TrapConfiguration configuration, final FlowFile flowFile) throws IOException;
+    SNMPConfiguration createSnmpListenTrapConfig(final int managerPort);
 
-    void close();
 }

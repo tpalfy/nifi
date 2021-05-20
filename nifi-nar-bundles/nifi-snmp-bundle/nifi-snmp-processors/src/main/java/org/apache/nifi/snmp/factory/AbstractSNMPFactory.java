@@ -35,22 +35,24 @@ import java.util.Optional;
 public abstract class AbstractSNMPFactory {
 
     private static final Logger logger = LoggerFactory.getLogger(AbstractSNMPFactory.class);
+    private static final String LOCALHOST = "127.0.0.1";
 
     protected AbstractSNMPFactory() {
         // hide implicit constructor
     }
 
-    protected static Snmp createSnmpClient() {
-        final Snmp snmp;
+    protected static Snmp createSimpleSnmpManager(SNMPConfiguration configuration) {
+        final String managerAddress = LOCALHOST + "/" + configuration.getManagerPort();
+        final Snmp snmpManager;
         try {
-            snmp = new Snmp(new DefaultUdpTransportMapping());
-            snmp.listen();
-            return snmp;
+            snmpManager = new Snmp(new DefaultUdpTransportMapping(new UdpAddress(managerAddress)));
+            snmpManager.listen();
         } catch (IOException e) {
-            final String errorMessage = "Creating SNMP client failed.";
+            final String errorMessage = "Creating SNMP manager failed.";
             logger.error(errorMessage, e);
             throw new CreateSNMPClientException(errorMessage);
         }
+        return snmpManager;
     }
 
     protected static Target createUserTarget(final SNMPConfiguration configuration) {
@@ -78,8 +80,8 @@ public abstract class AbstractSNMPFactory {
 
     private static void setupTargetBasicProperties(final Target target, final SNMPConfiguration configuration) {
         final int snmpVersion = configuration.getVersion();
-        final String host = configuration.getAgentHost();
-        final String port = configuration.getAgentPort();
+        final String host = configuration.getTargetHost();
+        final String port = configuration.getTargetPort();
         final int retries = configuration.getRetries();
         final int timeout = configuration.getTimeout();
 

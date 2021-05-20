@@ -22,11 +22,14 @@ import org.apache.nifi.annotation.behavior.WritesAttribute;
 import org.apache.nifi.annotation.behavior.WritesAttributes;
 import org.apache.nifi.annotation.documentation.CapabilityDescription;
 import org.apache.nifi.annotation.documentation.Tags;
+import org.apache.nifi.annotation.lifecycle.OnScheduled;
 import org.apache.nifi.components.PropertyDescriptor;
 import org.apache.nifi.flowfile.FlowFile;
 import org.apache.nifi.processor.ProcessContext;
 import org.apache.nifi.processor.ProcessSession;
 import org.apache.nifi.processor.Relationship;
+import org.apache.nifi.processor.exception.ProcessException;
+import org.apache.nifi.reporting.InitializationException;
 import org.apache.nifi.snmp.dto.SNMPSingleResponse;
 import org.apache.nifi.snmp.exception.SNMPException;
 import org.apache.nifi.snmp.utils.SNMPUtils;
@@ -91,6 +94,11 @@ public class SetSNMP extends AbstractSNMPProcessor {
             REL_FAILURE
     )));
 
+    @OnScheduled
+    public void init(final ProcessContext context) throws InitializationException {
+        initSnmpManager(context);
+    }
+
     @Override
     public void onTrigger(final ProcessContext context, final ProcessSession processSession) {
         final FlowFile flowFile = processSession.get();
@@ -105,6 +113,8 @@ public class SetSNMP extends AbstractSNMPProcessor {
                 getLogger().error("Failed to send request to the agent. Check if the agent supports the used version.");
                 processError(context, processSession, flowFile);
             }
+        } else {
+            throw new ProcessException("No incoming flowfile found.");
         }
     }
 
@@ -116,6 +126,16 @@ public class SetSNMP extends AbstractSNMPProcessor {
     @Override
     public Set<Relationship> getRelationships() {
         return RELATIONSHIPS;
+    }
+
+    @Override
+    protected String getTargetHost(ProcessContext processContext) {
+        return processContext.getProperty(AGENT_HOST).getValue();
+    }
+
+    @Override
+    protected String getTargetPort(ProcessContext processContext) {
+        return processContext.getProperty(AGENT_PORT).getValue();
     }
 
 

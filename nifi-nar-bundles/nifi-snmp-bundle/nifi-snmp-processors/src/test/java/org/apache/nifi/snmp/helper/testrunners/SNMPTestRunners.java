@@ -14,31 +14,27 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.apache.nifi.snmp.helper;
+package org.apache.nifi.snmp.helper.testrunners;
 
-import org.apache.nifi.snmp.exception.InvalidSnmpVersionException;
 import org.apache.nifi.util.MockFlowFile;
-import org.snmp4j.mp.SnmpConstants;
+import org.apache.nifi.util.TestRunner;
 
 import java.util.HashMap;
 import java.util.Map;
 
 import static org.apache.nifi.snmp.utils.SNMPUtils.SNMP_PROP_PREFIX;
 
-public class SNMPTestUtils {
+public interface SNMPTestRunners {
 
-    public static String getVersionByInt(int version) {
-        if (SnmpConstants.version1 == version) {
-            return "SNMPv1";
-        } else if (SnmpConstants.version2c == version) {
-            return "SNMPv2c";
-        } else if (SnmpConstants.version3 == version) {
-            return "SNMPv3";
-        }
-        throw new InvalidSnmpVersionException("Invalid version");
-    }
+    TestRunner createSnmpGetTestRunner(final int agentPort, final String oid, final String strategy);
 
-    public static MockFlowFile getFlowFile(String oid, String oidValue) {
+    TestRunner createSnmpSetTestRunner(final int agentPort, final String oid, final String oidValue);
+
+    TestRunner createSnmpSendTrapTestRunner(final int managerPort, final String oid, final String oidValue);
+
+    TestRunner createSnmpListenTrapTestRunner(final int managerPort);
+
+    default MockFlowFile getFlowFile(String oid, String oidValue) {
         final MockFlowFile flowFile = new MockFlowFile(1L);
         final Map<String, String> attributes = new HashMap<>();
         attributes.put(SNMP_PROP_PREFIX + oid, oidValue);

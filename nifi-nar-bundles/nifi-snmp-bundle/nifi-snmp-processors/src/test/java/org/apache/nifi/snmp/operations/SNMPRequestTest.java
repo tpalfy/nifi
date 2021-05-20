@@ -16,15 +16,11 @@
  */
 package org.apache.nifi.snmp.operations;
 
-import org.apache.nifi.snmp.dto.SNMPSingleResponse;
 import org.apache.nifi.snmp.dto.SNMPTreeResponse;
-import org.apache.nifi.snmp.helper.SNMPTestUtils;
 import org.apache.nifi.snmp.testagents.TestAgent;
 import org.apache.nifi.util.MockFlowFile;
 import org.junit.After;
 import org.junit.Before;
-import org.snmp4j.CommunityTarget;
-import org.snmp4j.Snmp;
 import org.snmp4j.agent.mo.DefaultMOFactory;
 import org.snmp4j.agent.mo.MOAccessImpl;
 import org.snmp4j.smi.OID;
@@ -46,6 +42,8 @@ public abstract class SNMPRequestTest {
     protected static final String READ_ONLY_OID_1 = "1.3.6.1.4.1.32437.1.5.1.4.2.0";
     protected static final String READ_ONLY_OID_2 = "1.3.6.1.4.1.32437.1.5.1.4.3.0";
     protected static final String WRITE_ONLY_OID = "1.3.6.1.4.1.32437.1.5.1.4.4.0";
+    protected static final String WALK_OID = "1.3.6.1.4.1.32437";
+    protected static final String INVALID_OID = "1.3.6.1.4.1.32437.0";
     protected static final String READ_ONLY_OID_VALUE_1 = "TestOID1";
     protected static final String READ_ONLY_OID_VALUE_2 = "TestOID2";
     protected static final String WRITE_ONLY_OID_VALUE = "writeOnlyOID";
@@ -54,7 +52,9 @@ public abstract class SNMPRequestTest {
     protected static final String NOT_WRITABLE = "Not writable";
     protected static final String NO_ACCESS = "No access";
     protected static final String SUCCESS = "Success";
-    protected static final String EXPECTED_OID_VALUE = "testValue";
+    protected static final String NO_SUCH_OBJECT = "noSuchObject";
+    protected static final String UNABLE_TO_CREATE_OBJECT = "Unable to create object";
+    protected static final String TEST_OID_VALUE = "testValue";
     protected static final Map<String, String> WALK_OID_MAP;
 
     static {
@@ -83,31 +83,12 @@ public abstract class SNMPRequestTest {
         agent.stop();
     }
 
-    protected SNMPTreeResponse getTreeEvents(final int port, final int version) throws IOException {
-        final Snmp snmp = SNMPTestUtils.createSnmpClient();
-        final CommunityTarget target = SNMPTestUtils.createCommTarget("public", LOCALHOST + "/" + port, version);
-        final StandardSNMPRequestHandler standardSnmpRequestHandler = new StandardSNMPRequestHandler(snmp, target);
-        return standardSnmpRequestHandler.walk("1.3.6.1.4.1.32437");
-    }
-
-    protected SNMPSingleResponse getResponseEvent(final String address, final int port, final int version, final String oid) throws IOException {
-        final Snmp snmp = SNMPTestUtils.createSnmpClient();
-        final CommunityTarget target = SNMPTestUtils.createCommTarget("public", address + "/" + port, version);
-        final StandardSNMPRequestHandler standardSnmpRequestHandler = new StandardSNMPRequestHandler(snmp, target);
-        return standardSnmpRequestHandler.get(oid);
-    }
-
-    protected SNMPSingleResponse getSetResponse(final int port, final int version, final String oid, final String expectedOid) throws IOException {
-        final Snmp snmp = SNMPTestUtils.createSnmpClient();
-        final CommunityTarget target = SNMPTestUtils.createCommTarget("public", LOCALHOST + "/" + port, version);
-        final StandardSNMPRequestHandler standardSnmpRequestHandler = new StandardSNMPRequestHandler(snmp, target);
-
+    protected MockFlowFile getFlowFile(String oid) {
         final MockFlowFile flowFile = new MockFlowFile(1L);
         final Map<String, String> attributes = new HashMap<>();
-        attributes.put(SNMP_PROP_PREFIX + oid, expectedOid);
+        attributes.put(SNMP_PROP_PREFIX + oid, TEST_OID_VALUE);
         flowFile.putAttributes(attributes);
-
-        return standardSnmpRequestHandler.set(flowFile);
+        return flowFile;
     }
 
     protected void assertSubTreeContainsOids(SNMPTreeResponse response) {
@@ -124,7 +105,7 @@ public abstract class SNMPRequestTest {
             }
         });
         if (!isMatch.get()) {
-            fail("Expected OID did not found in subtree.");
+            fail("Expected OID is not found in subtree.");
         }
     }
 }

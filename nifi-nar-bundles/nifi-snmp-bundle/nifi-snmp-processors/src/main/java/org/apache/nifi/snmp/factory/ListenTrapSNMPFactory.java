@@ -14,24 +14,22 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.apache.nifi.snmp.operations;
+package org.apache.nifi.snmp.factory;
 
-import org.apache.nifi.flowfile.FlowFile;
-import org.apache.nifi.snmp.configuration.TrapConfiguration;
-import org.apache.nifi.snmp.dto.SNMPSingleResponse;
-import org.apache.nifi.snmp.dto.SNMPTreeResponse;
+import org.apache.nifi.snmp.configuration.SNMPConfiguration;
+import org.snmp4j.Snmp;
+import org.snmp4j.Target;
 
-import java.io.IOException;
+public class ListenTrapSNMPFactory extends AbstractSNMPFactory implements SNMPFactory {
 
-public interface SNMPRequestHandler {
 
-    SNMPSingleResponse get(final String oid) throws IOException;
+    @Override
+    public Snmp createSnmpManagerInstance(SNMPConfiguration configuration) {
+        return createSimpleSnmpManager(configuration);
+    }
 
-    SNMPTreeResponse walk(final String oid);
-
-    SNMPSingleResponse set(final FlowFile flowfile) throws IOException;
-
-    void sendTrap(TrapConfiguration configuration, final FlowFile flowFile) throws IOException;
-
-    void close();
+    @Override
+    public Target createTargetInstance(SNMPConfiguration configuration) {
+        throw new UnsupportedOperationException("ListenSNMP processor target creation is not supported.");
+    }
 }

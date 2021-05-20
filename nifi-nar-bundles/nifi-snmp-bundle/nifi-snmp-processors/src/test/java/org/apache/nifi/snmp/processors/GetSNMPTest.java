@@ -16,16 +16,18 @@
  */
 package org.apache.nifi.snmp.processors;
 
+import org.apache.nifi.snmp.helper.testrunners.SNMPTestRunnerFactory;
+import org.apache.nifi.snmp.helper.testrunners.SNMPTestRunners;
 import org.apache.nifi.snmp.testagents.TestSNMPV1Agent;
 import org.apache.nifi.snmp.utils.SNMPUtils;
 import org.apache.nifi.util.MockFlowFile;
 import org.apache.nifi.util.TestRunner;
-import org.apache.nifi.util.TestRunners;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
 import org.junit.Test;
 import org.snmp4j.agent.mo.DefaultMOFactory;
 import org.snmp4j.agent.mo.MOAccessImpl;
+import org.snmp4j.mp.SnmpConstants;
 import org.snmp4j.smi.OID;
 import org.snmp4j.smi.OctetString;
 
@@ -36,21 +38,23 @@ import static org.junit.Assert.assertNotNull;
 
 public class GetSNMPTest {
 
-    private static TestSNMPV1Agent snmpV1Agent;
-    private static final OID readOnlyOID1 = new OID("1.3.6.1.4.1.32437.1.5.1.4.2.0");
-    private static final OID readOnlyOID2 = new OID("1.3.6.1.4.1.32437.1.5.1.4.3.0");
-    private static final String OIDValue1 = "TestOID1";
-    private static final String OIDValue2 = "TestOID2";
+    private static final String READ_ONLY_OID_1 = "1.3.6.1.4.1.32437.1.5.1.4.2.0";
+    private static final String READ_ONLY_OID_2 = "1.3.6.1.4.1.32437.1.5.1.4.3.0";
+    private static final String WALK_OID = "1.3.6.1.4.1.32437";
+    private static final String OID_VALUE_1 = "TestOID1";
+    private static final String OID_VALUE_2 = "TestOID2";
     private static final String GET = "GET";
     private static final String WALK = "WALK";
+    private static final SNMPTestRunners testRunner = SNMPTestRunnerFactory.getTestRunners(SnmpConstants.version1);
+    private static TestSNMPV1Agent snmpV1Agent;
 
     @BeforeClass
     public static void setUp() throws IOException {
         snmpV1Agent = new TestSNMPV1Agent("127.0.0.1");
         snmpV1Agent.start();
         snmpV1Agent.registerManagedObjects(
-                DefaultMOFactory.getInstance().createScalar(new OID(readOnlyOID1), MOAccessImpl.ACCESS_READ_ONLY, new OctetString(OIDValue1)),
-                DefaultMOFactory.getInstance().createScalar(new OID(readOnlyOID2), MOAccessImpl.ACCESS_READ_ONLY, new OctetString(OIDValue2))
+                DefaultMOFactory.getInstance().createScalar(new OID(READ_ONLY_OID_1), MOAccessImpl.ACCESS_READ_ONLY, new OctetString(OID_VALUE_1)),
+                DefaultMOFactory.getInstance().createScalar(new OID(READ_ONLY_OID_2), MOAccessImpl.ACCESS_READ_ONLY, new OctetString(OID_VALUE_2))
         );
     }
 
@@ -61,32 +65,23 @@ public class GetSNMPTest {
 
     @Test
     public void testSnmpV1Get() {
-        final TestRunner runner = getTestRunner(readOnlyOID1.toString(), String.valueOf(snmpV1Agent.getPort()), GET);
+
+        final TestRunner runner = testRunner.createSnmpGetTestRunner(snmpV1Agent.getPort(), READ_ONLY_OID_1, GET);
         runner.run();
         final MockFlowFile successFF = runner.getFlowFilesForRelationship(GetSNMP.REL_SUCCESS).get(0);
+
         assertNotNull(successFF);
-        assertEquals(OIDValue1, successFF.getAttribute(SNMPUtils.SNMP_PROP_PREFIX + readOnlyOID1.toString() + SNMPUtils.SNMP_PROP_DELIMITER + "4"));
+        assertEquals(OID_VALUE_1, successFF.getAttribute(SNMPUtils.SNMP_PROP_PREFIX + READ_ONLY_OID_1.toString() + SNMPUtils.SNMP_PROP_DELIMITER + "4"));
     }
 
     @Test
     public void testSnmpV1Walk() {
-        final TestRunner runner = getTestRunner("1.3.6.1.4.1.32437", String.valueOf(snmpV1Agent.getPort()), WALK);
+        final TestRunner runner = testRunner.createSnmpGetTestRunner(snmpV1Agent.getPort(), WALK_OID, WALK);
         runner.run();
         final MockFlowFile successFF = runner.getFlowFilesForRelationship(GetSNMP.REL_SUCCESS).get(0);
         assertNotNull(successFF);
-        assertEquals(OIDValue1, successFF.getAttribute(SNMPUtils.SNMP_PROP_PREFIX + readOnlyOID1.toString() + SNMPUtils.SNMP_PROP_DELIMITER + "4"));
-        assertEquals(OIDValue2, successFF.getAttribute(SNMPUtils.SNMP_PROP_PREFIX + readOnlyOID2.toString() + SNMPUtils.SNMP_PROP_DELIMITER + "4"));
-    }
 
-    private TestRunner getTestRunner(final String oid, final String port, final String strategy) {
-        final TestRunner runner = TestRunners.newTestRunner(GetSNMP.class);
-        runner.setProperty(GetSNMP.OID, oid);
-        runner.setProperty(GetSNMP.AGENT_HOST, "127.0.0.1");
-        runner.setProperty(GetSNMP.AGENT_PORT, port);
-        runner.setProperty(GetSNMP.SNMP_COMMUNITY, "public");
-        runner.setProperty(GetSNMP.SNMP_VERSION, "SNMPv1");
-        runner.setProperty(GetSNMP.SNMP_STRATEGY, strategy);
-        runner.setProperty(GetSNMP.SNMP_SECURITY_LEVEL, "noAuthNoPriv");
-        return runner;
+        assertEquals(OID_VALUE_1, successFF.getAttribute(SNMPUtils.SNMP_PROP_PREFIX + READ_ONLY_OID_1 + SNMPUtils.SNMP_PROP_DELIMITER + "4"));
+        assertEquals(OID_VALUE_2, successFF.getAttribute(SNMPUtils.SNMP_PROP_PREFIX + READ_ONLY_OID_2 + SNMPUtils.SNMP_PROP_DELIMITER + "4"));
     }
 }

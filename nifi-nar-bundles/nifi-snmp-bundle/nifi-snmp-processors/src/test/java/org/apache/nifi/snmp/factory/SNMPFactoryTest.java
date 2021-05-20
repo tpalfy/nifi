@@ -28,10 +28,11 @@ import static org.hamcrest.CoreMatchers.equalTo;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
 
-public class SNMPClientFactoryTest {
+public class SNMPFactoryTest {
 
     private final SNMPConfiguration.Builder configurationBuilder = SNMPConfiguration.builder()
-            .setTargetHost("127.0.0.1")
+            .setManagerPort("0")
+            .setTargetHost("1.2.3.4")
             .setTargetPort("12345")
             .setRetries(1)
             .setTimeout(1000)

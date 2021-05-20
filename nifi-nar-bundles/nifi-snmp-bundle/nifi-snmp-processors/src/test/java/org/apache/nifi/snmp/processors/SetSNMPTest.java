@@ -16,22 +16,22 @@
  */
 package org.apache.nifi.snmp.processors;
 
+import org.apache.nifi.snmp.helper.testrunners.SNMPTestRunnerFactory;
+import org.apache.nifi.snmp.helper.testrunners.SNMPTestRunners;
 import org.apache.nifi.snmp.testagents.TestSNMPV1Agent;
 import org.apache.nifi.snmp.utils.SNMPUtils;
 import org.apache.nifi.util.MockFlowFile;
 import org.apache.nifi.util.TestRunner;
-import org.apache.nifi.util.TestRunners;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
 import org.junit.Test;
 import org.snmp4j.agent.mo.DefaultMOFactory;
 import org.snmp4j.agent.mo.MOAccessImpl;
+import org.snmp4j.mp.SnmpConstants;
 import org.snmp4j.smi.OID;
 import org.snmp4j.smi.OctetString;
 
 import java.io.IOException;
-import java.util.HashMap;
-import java.util.Map;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
@@ -39,11 +39,9 @@ import static org.junit.Assert.assertNotNull;
 public class SetSNMPTest {
 
     private static TestSNMPV1Agent snmpV1Agent;
-    private static final OID TEST_OID = new OID("1.3.6.1.4.1.32437.1.5.1.4.2.0");
+    private static final String TEST_OID = "1.3.6.1.4.1.32437.1.5.1.4.2.0";
     private static final String TEST_OID_VALUE = "TestOID";
-    private static final String LOCALHOST = "127.0.0.1";
-    private static final String VALID_OID_FF_ATTRIBUTE = "snmp$1.3.6.1.4.1.32437.1.5.1.4.2.0$4";
-    private static final String INVALID_OID_FF_ATTRIBUTE = "snmp$1.3.6.1.4.1.32437.1.5.1.4.213.0$4";
+    private static final SNMPTestRunners testRunner = SNMPTestRunnerFactory.getTestRunners(SnmpConstants.version1);
 
     @BeforeClass
     public static void setUp() throws IOException {
@@ -61,28 +59,11 @@ public class SetSNMPTest {
 
     @Test
     public void testSnmpV1Set() {
-        final TestRunner runner = getTestRunner(LOCALHOST, String.valueOf(snmpV1Agent.getPort()), VALID_OID_FF_ATTRIBUTE, true);
+        final TestRunner runner = testRunner.createSnmpSetTestRunner(snmpV1Agent.getPort(), TEST_OID, TEST_OID_VALUE);
         runner.run();
         final MockFlowFile successFF = runner.getFlowFilesForRelationship(SetSNMP.REL_SUCCESS).get(0);
-        assertNotNull(successFF);
-        assertEquals(TEST_OID_VALUE, successFF.getAttribute(SNMPUtils.SNMP_PROP_PREFIX + TEST_OID.toString() + SNMPUtils.SNMP_PROP_DELIMITER + "4"));
-    }
 
-    private TestRunner getTestRunner(final String host, final String port, final String oid, final boolean withAttributes) {
-        final SetSNMP processor = new SetSNMP();
-        final TestRunner runner = TestRunners.newTestRunner(processor);
-        final MockFlowFile ff = new MockFlowFile(123);
-        if (withAttributes) {
-            final Map<String, String> attributes = ff.getAttributes();
-            final Map<String, String> newAttributes = new HashMap<>(attributes);
-            newAttributes.put(oid, TEST_OID_VALUE);
-            ff.putAttributes(newAttributes);
-        }
-        runner.enqueue(ff);
-        runner.setProperty(GetSNMP.AGENT_HOST, host);
-        runner.setProperty(GetSNMP.AGENT_PORT, port);
-        runner.setProperty(GetSNMP.SNMP_COMMUNITY, "public");
-        runner.setProperty(GetSNMP.SNMP_VERSION, "SNMPv1");
-        return runner;
+        assertNotNull(successFF);
+        assertEquals(TEST_OID_VALUE, successFF.getAttribute(SNMPUtils.SNMP_PROP_PREFIX + TEST_OID + SNMPUtils.SNMP_PROP_DELIMITER + "4"));
     }
 }

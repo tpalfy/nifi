@@ -23,6 +23,7 @@ import org.apache.nifi.snmp.exception.InvalidSnmpVersionException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.snmp4j.PDU;
+import org.snmp4j.PDUv1;
 import org.snmp4j.mp.SnmpConstants;
 import org.snmp4j.security.AuthHMAC128SHA224;
 import org.snmp4j.security.AuthHMAC192SHA256;
@@ -130,6 +131,19 @@ public final class SNMPUtils {
         attributes.computeIfAbsent(SNMP_PROP_PREFIX + "typeString", v -> PDU.getTypeString(response.getType()));
 
         return attributes;
+    }
+
+    public static Map<String, String> getV1TrapPduAttributeMap(final PDU pdu) {
+        final Map<String, String> trapAttributes = getPduAttributeMap(pdu);
+        PDUv1 v1TrapPdu = (PDUv1) pdu;
+
+        trapAttributes.computeIfAbsent(SNMP_PROP_PREFIX + "enterprise", v -> String.valueOf(v1TrapPdu.getEnterprise()));
+        trapAttributes.computeIfAbsent(SNMP_PROP_PREFIX + "agentAddress", v -> String.valueOf(v1TrapPdu.getAgentAddress()));
+        trapAttributes.computeIfAbsent(SNMP_PROP_PREFIX + "genericTrapType", v -> String.valueOf(v1TrapPdu.getGenericTrap()));
+        trapAttributes.computeIfAbsent(SNMP_PROP_PREFIX + "specificTrapType", v -> String.valueOf(v1TrapPdu.getSpecificTrap()));
+        trapAttributes.computeIfAbsent(SNMP_PROP_PREFIX + "timestamp", v -> String.valueOf(v1TrapPdu.getTimestamp()));
+
+        return trapAttributes;
     }
 
     /**

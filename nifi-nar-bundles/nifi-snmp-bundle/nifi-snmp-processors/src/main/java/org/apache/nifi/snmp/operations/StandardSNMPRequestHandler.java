@@ -17,12 +17,14 @@
 package org.apache.nifi.snmp.operations;
 
 import org.apache.nifi.flowfile.FlowFile;
+import org.apache.nifi.snmp.configuration.TrapConfiguration;
 import org.apache.nifi.snmp.dto.SNMPSingleResponse;
 import org.apache.nifi.snmp.dto.SNMPTreeResponse;
 import org.apache.nifi.snmp.exception.CloseSNMPClientException;
 import org.apache.nifi.snmp.exception.InvalidFlowFileException;
 import org.apache.nifi.snmp.exception.RequestTimeoutException;
 import org.apache.nifi.snmp.exception.SNMPWalkException;
+import org.apache.nifi.snmp.factory.TrapPDUFactory;
 import org.apache.nifi.snmp.utils.SNMPUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -44,9 +46,19 @@ import java.util.List;
 
 final class StandardSNMPRequestHandler implements SNMPRequestHandler {
 
+    private static final String INVALID_FLOWFILE_EXCEPTION_MESSAGE = "Could not read the variable bindings from the " +
+            "flowfile. Please, add the OIDs to set in separate properties. E.g. Property name: snmp$1.3.6.1.2.1.1.1.0 " +
+            "Value: Example value. ";
+
+    private static final String REQUEST_TIMEOUT_EXCEPTION_TEMPLATE = "Request timed out. Please check if (1). the " +
+            "agent host and port is correctly set, (2). the agent is running, (3). the agent SNMP version corresponds" +
+            " with the processor's one, (4) the community string is correct and has %1$s access, (5) In case of SNMPv3" +
+            " check if the user credentials are valid and the user in a group with %1$s access.";
+
     private static final Logger logger = LoggerFactory.getLogger(StandardSNMPRequestHandler.class);
     private static final PDUFactory getPduFactory = new DefaultPDUFactory(PDU.GET);
     private static final PDUFactory setPduFactory = new DefaultPDUFactory(PDU.SET);
+    private static final TrapPDUFactory trapPduFactory = new TrapPDUFactory();
     private final Snmp snmpManager;
     private final Target target;
 
@@ -67,10 +79,7 @@ final class StandardSNMPRequestHandler implements SNMPRequestHandler {
         final ResponseEvent response = snmpManager.get(pdu, target);
         final PDU responsePdu = response.getResponse();
         if (responsePdu == null) {
-            throw new RequestTimeoutException("Request timed out. Please check if (1). the agent host and port is correctly set, " +
-                    "(2). the agent is running, (3). the agent SNMP version corresponds with the processor's one, (4) the " +
-                    "community string is correct and has read access, (5) In case of SNMPv3 check if the user credentials " +
-                    "are valid and the user in a group with read access.");
+            throw new RequestTimeoutException(String.format(REQUEST_TIMEOUT_EXCEPTION_TEMPLATE, "read"));
         }
         return new SNMPSingleResponse(target, responsePdu);
     }
@@ -121,15 +130,22 @@ final class StandardSNMPRequestHandler implements SNMPRequestHandler {
             final ResponseEvent response = snmpManager.set(pdu, target);
             final PDU responsePdu = response.getResponse();
             if (responsePdu == null) {
-                throw new RequestTimeoutException("Request timed out. Please check if (1). the agent host and port is correctly set, " +
-                        "(2). the agent is running, (3). the agent SNMP version corresponds with the processor's one, (4) the " +
-                        "community string is correct and has write access, (5) In case of SNMPv3 check if the user credentials " +
-                        "are valid and the user in a group with write access.");
+                throw new RequestTimeoutException(String.format(REQUEST_TIMEOUT_EXCEPTION_TEMPLATE, "write"));
             }
             return new SNMPSingleResponse(target, responsePdu);
         }
-        throw new InvalidFlowFileException("Could not read the variable bindings from the flowfile. Please, " +
-                "add the OIDs to set in separate properties. E.g. Property name: snmp$1.3.6.1.2.1.1.1.0 Value: Example value. ");
+        throw new InvalidFlowFileException(INVALID_FLOWFILE_EXCEPTION_MESSAGE);
+    }
+
+    public void sendTrap(TrapConfiguration configuration, final FlowFile flowFile) throws IOException {
+        final PDU pdu = trapPduFactory.getTrapPdu(target, configuration);
+        if (flowFile != null) {
+            final boolean isAnyVariableAdded = SNMPUtils.addVariables(pdu, flowFile.getAttributes());
+            if (!isAnyVariableAdded) {
+                throw new InvalidFlowFileException(INVALID_FLOWFILE_EXCEPTION_MESSAGE);
+            }
+        }
+        snmpManager.send(pdu, target);
     }
 
     public void close() {
@@ -140,7 +156,7 @@ final class StandardSNMPRequestHandler implements SNMPRequestHandler {
             }
             snmpManager.close();
         } catch (IOException e) {
-            final String errorMessage = "Could not close SNMP client.";
+            final String errorMessage = "Could not close SNMP manager.";
             logger.error(errorMessage, e);
             throw new CloseSNMPClientException(errorMessage);
         }
