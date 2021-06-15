@@ -142,12 +142,10 @@ public class StandardFlowAnalysisRuleDAO extends ComponentDAO implements FlowAna
                     }
                 } catch (IllegalStateException | ComponentLifeCycleException ise) {
                     throw new NiFiCoreException(ise.getMessage(), ise);
-                } catch (RejectedExecutionException ree) {
-                    throw new NiFiCoreException("Unable to schedule all tasks for the specified flow analysis rule.", ree);
                 } catch (NullPointerException npe) {
-                    throw new NiFiCoreException("Unable to update flow analysis rule run state.", npe);
+                    throw new NiFiCoreException("Unable to update flow analysis rule state.", npe);
                 } catch (Exception e) {
-                    throw new NiFiCoreException("Unable to update flow analysis rule run state: " + e, e);
+                    throw new NiFiCoreException("Unable to update flow analysis rule state: " + e, e);
                 }
             }
         }

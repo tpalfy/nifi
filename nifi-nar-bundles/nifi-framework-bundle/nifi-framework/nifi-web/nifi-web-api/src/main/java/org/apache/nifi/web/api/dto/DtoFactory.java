@@ -1716,6 +1716,15 @@ public final class DtoFactory {
             propertyDescriptors = node.getReportingTask().getPropertyDescriptors();
             validationErrors = node.getValidationErrors();
             processGroupId = null;
+        } else if (component instanceof FlowAnalysisRuleNode) {
+            final FlowAnalysisRuleNode node = ((FlowAnalysisRuleNode) component);
+            dto.setState(node.getState().name());
+            dto.setType(node.getComponentType());
+            dto.setReferenceType(FlowAnalysisRule.class.getSimpleName());
+
+            propertyDescriptors = node.getFlowAnalysisRule().getPropertyDescriptors();
+            validationErrors = node.getValidationErrors();
+            processGroupId = null;
         }
 
         // ensure descriptors is non null

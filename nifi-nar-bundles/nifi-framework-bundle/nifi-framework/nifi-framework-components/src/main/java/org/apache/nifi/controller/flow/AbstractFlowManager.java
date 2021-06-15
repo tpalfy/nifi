@@ -204,6 +204,7 @@ public abstract class AbstractFlowManager implements FlowManager {
         componentCounts.put("Processors", allProcessors.size());
         componentCounts.put("Controller Services", getAllControllerServices().size());
         componentCounts.put("Reporting Tasks", getAllReportingTasks().size());
+        componentCounts.put("Flow Analysis Rules", getAllFlowAnalysisRules().size());
         componentCounts.put("Process Groups", allProcessGroups.size() - 2); // -2 to account for the root group because we don't want it in our counts and the 'root group alias' key.
         componentCounts.put("Remote Process Groups", getRootGroup().findAllRemoteProcessGroups().size());
 
@@ -262,6 +263,7 @@ public abstract class AbstractFlowManager implements FlowManager {
 
         getRootControllerServices().forEach(this::removeRootControllerService);
         getAllReportingTasks().forEach(this::removeReportingTask);
+        getAllFlowAnalysisRules().forEach(this::removeFlowAnalysisRule);
 
         for (final String registryId : flowRegistryClient.getRegistryIdentifiers()) {
             flowRegistryClient.removeFlowRegistry(registryId);
@@ -279,6 +281,10 @@ public abstract class AbstractFlowManager implements FlowManager {
 
         for (final ReportingTaskNode reportingTask : getAllReportingTasks()) {
             reportingTask.verifyCanDelete();
+        }
+
+        for (final FlowAnalysisRuleNode flowAnalysisRule : getAllFlowAnalysisRules()) {
+            flowAnalysisRule.verifyCanDelete();
         }
 
         final ProcessGroup rootGroup = getRootGroup();
@@ -415,7 +421,7 @@ public abstract class AbstractFlowManager implements FlowManager {
     }
 
     @Override
-    public FlowAnalysisRuleNode getFlowAnalysisRule(final String taskId) {
+    public FlowAnalysisRuleNode getFlowAnalysisRuleNode(final String taskId) {
         return allFlowAnalysisRules.get(taskId);
     }
 

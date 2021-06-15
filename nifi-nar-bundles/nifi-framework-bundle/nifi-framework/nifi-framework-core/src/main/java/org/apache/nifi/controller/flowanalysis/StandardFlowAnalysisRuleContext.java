@@ -36,7 +36,7 @@ public class StandardFlowAnalysisRuleContext extends AbstractFlowAnalysisRuleCon
         ParameterLookup parameterLookup,
         VariableRegistry variableRegistry
     ) {
-        super(flowAnalysisRule, properties, flowController.getControllerServiceProvider(), parameterLookup, variableRegistry);
+        super(flowAnalysisRule, properties, flowController.getControllerServiceProvider(), flowController.getBulletinRepository(), parameterLookup, variableRegistry);
         this.flowController = flowController;
     }
 

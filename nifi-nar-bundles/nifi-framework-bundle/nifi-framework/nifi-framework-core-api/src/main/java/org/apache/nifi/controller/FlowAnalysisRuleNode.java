@@ -16,10 +16,13 @@
  */
 package org.apache.nifi.controller;
 
+import org.apache.nifi.controller.service.ControllerServiceNode;
 import org.apache.nifi.flowanalysis.FlowAnalysisRuleContext;
 import org.apache.nifi.flowanalysis.FlowAnalysisRule;
 import org.apache.nifi.flowanalysis.FlowAnalysisRuleState;
 import org.apache.nifi.flowanalysis.FlowAnalysisRuleType;
+
+import java.util.Set;
 
 public interface FlowAnalysisRuleNode extends ComponentNode {
     FlowAnalysisRule getFlowAnalysisRule();
@@ -36,8 +39,6 @@ public interface FlowAnalysisRuleNode extends ComponentNode {
 
     FlowAnalysisRuleState getState();
 
-    void setState(FlowAnalysisRuleState state);
-
     boolean isEnabled();
 
     String getComments();
@@ -48,9 +49,15 @@ public interface FlowAnalysisRuleNode extends ComponentNode {
 
     void verifyCanEnable();
 
+    void verifyCanEnable(Set<ControllerServiceNode> ignoredServices);
+
     void verifyCanDelete();
 
     void verifyCanUpdate();
 
     void verifyCanClearState();
+
+    void enable();
+
+    void disable();
 }

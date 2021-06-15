@@ -1461,7 +1461,7 @@
         };
 
         // add the new flow analysis rule
-        var addTask = $.ajax({
+        var addRule = $.ajax({
             type: 'POST',
             url: config.urls.createFlowAnalysisRule,
             data: JSON.stringify(flowAnalysisRuleEntity),
@@ -1489,7 +1489,7 @@
         // hide the dialog
         $('#new-flow-analysis-rule-dialog').modal('hide');
 
-        return addTask;
+        return addRule;
     };
 
     /**
@@ -2631,7 +2631,7 @@
                     name: 'General',
                     tabContentId: 'general-settings-tab-content'
                 }, {
-                    name: 'Reporting Task Controller Services',
+                    name: 'Reporting Task/Flow Analysis Rule Controller Services',
                     tabContentId: 'controller-services-tab-content'
                 }, {
                     name: 'Reporting Tasks',
@@ -2662,9 +2662,9 @@
 
                             // update the tooltip on the button
                             $('#new-service-or-task').attr('title', function () {
-                                if (tab === 'Reporting Task Controller Services') {
+                                if (tab === 'Reporting Task/Flow Analysis Rule Controller Services') {
                                     $('#settings-save').hide();
-                                    return 'Create a new reporting task controller service';
+                                    return 'Create a new reporting task/flow analysis rule controller service';
                                 } else if (tab === 'Reporting Tasks') {
                                     $('#settings-save').hide();
                                     return 'Create a new reporting task';
@@ -2681,7 +2681,7 @@
                             $('div.controller-settings-table').css('top', '0');
                         }
 
-                        if (tab === 'Reporting Task Controller Services') {
+                        if (tab === 'Reporting Task/Flow Analysis Rule Controller Services') {
                             $('#controller-cs-availability').show();
                         } else if (tab === 'Reporting Tasks' || tab === 'Flow Analysis Rules' || tab === 'Registry Clients') {
                             $('#controller-cs-availability').hide();
@@ -2698,10 +2698,10 @@
                 loadSettings();
             });
 
-            // create a new controller service or reporting task
+            // create a new controller service or reporting task or flow analysis rule
             $('#new-service-or-task').on('click', function () {
                 var selectedTab = $('#settings-tabs li.selected-tab').text();
-                if (selectedTab === 'Reporting Task Controller Services') {
+                if (selectedTab === 'Reporting Task/Flow Analysis Rule Controller Services') {
                     var controllerServicesUri = config.urls.api + '/controller/controller-services';
                     nfControllerServices.promptNewControllerService(controllerServicesUri, getControllerServicesTable());
                 } else if (selectedTab === 'Reporting Tasks') {
@@ -2870,8 +2870,9 @@
          *
          * @param {object} controllerServiceBulletins
          * @param {object} reportingTaskBulletins
+         * @param {object} flowAnalysisRuleBulletins
          */
-        setBulletins: function (controllerServiceBulletins, reportingTaskBulletins) {
+        setBulletins: function (controllerServiceBulletins, reportingTaskBulletins, flowAnalysisRuleBulletins) {
             if ($('#controller-services-table').data('gridInstance')) {
                 nfControllerServices.setBulletins(getControllerServicesTable(), controllerServiceBulletins);
             }
@@ -2907,6 +2908,38 @@
                 });
             }
             reportingTasksData.endUpdate();
+
+            // flow analysis rules
+            var flowAnalysisRulesGrid = $('#flow-analysis-rules-table').data('gridInstance');
+            var flowAnalysisRulesData = flowAnalysisRulesGrid.getData();
+            flowAnalysisRulesData.beginUpdate();
+
+            // if there are some bulletins process them
+            if (!nfCommon.isEmpty(flowAnalysisRuleBulletins)) {
+                var flowAnalysisRuleBulletinsBySource = d3.nest()
+                    .key(function (d) {
+                        return d.sourceId;
+                    })
+                    .map(flowAnalysisRuleBulletins, d3.map);
+
+                flowAnalysisRuleBulletinsBySource.each(function (sourceBulletins, sourceId) {
+                    var flowAnalysisRule = flowAnalysisRulesData.getItemById(sourceId);
+                    if (nfCommon.isDefinedAndNotNull(flowAnalysisRule)) {
+                        flowAnalysisRulesData.updateItem(sourceId, $.extend(flowAnalysisRule, {
+                            bulletins: sourceBulletins
+                        }));
+                    }
+                });
+            } else {
+                // if there are no bulletins clear all
+                var flowAnalysisRules = flowAnalysisRulesData.getItems();
+                $.each(flowAnalysisRules, function (_, flowAnalysisRule) {
+                    flowAnalysisRulesData.updateItem(flowAnalysisRule.id, $.extend(flowAnalysisRule, {
+                        bulletins: []
+                    }));
+                });
+            }
+            flowAnalysisRulesData.endUpdate();
         }
     };
 

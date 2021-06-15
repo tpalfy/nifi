@@ -96,11 +96,6 @@
         if ($('#flow-analysis-rule-comments').val() !== entity.component['comments']) {
             return true;
         }
-        if ($('#flow-analysis-rule-enabled').hasClass('checkbox-checked') && entity.component['state'] === 'DISABLED') {
-            return true;
-        } else if ($('#flow-analysis-rule-enabled').hasClass('checkbox-unchecked') && (entity.component['state'] === 'ENABLED' || entity.component['state'] === 'DISABLED')) {
-            return true;
-        }
 
         var ruleType = $('#flow-analysis-rule-type-combo').combo('getSelectedOption').value;
         if (ruleType !== (entity.component['ruleType'] + '')) {
@@ -416,18 +411,11 @@
                 // record the flow analysis rule details
                 $('#flow-analysis-rule-configuration').data('flowAnalysisRuleDetails', flowAnalysisRuleEntity);
 
-                // determine if the enabled checkbox is checked or not
-                var flowAnalysisRuleEnableStyle = 'checkbox-checked';
-                if (flowAnalysisRule['state'] === 'DISABLED') {
-                    flowAnalysisRuleEnableStyle = 'checkbox-unchecked';
-                }
-
                 // populate the flow analysis rule settings
                 nfCommon.populateField('flow-analysis-rule-id', flowAnalysisRule['id']);
                 nfCommon.populateField('flow-analysis-rule-type', nfCommon.formatType(flowAnalysisRule));
                 nfCommon.populateField('flow-analysis-rule-bundle', nfCommon.formatBundle(flowAnalysisRule['bundle']));
                 $('#flow-analysis-rule-name').val(flowAnalysisRule['name']);
-                $('#flow-analysis-rule-enabled').removeClass('checkbox-unchecked checkbox-checked').addClass(flowAnalysisRuleEnableStyle);
                 $('#flow-analysis-rule-comments').val(flowAnalysisRule['comments']);
 
                 $('#flow-analysis-rule-type-combo').combo({

@@ -25,13 +25,18 @@ import org.apache.nifi.components.PropertyValue;
 import org.apache.nifi.components.resource.ResourceContext;
 import org.apache.nifi.components.resource.StandardResourceContext;
 import org.apache.nifi.components.resource.StandardResourceReferenceFactory;
+import org.apache.nifi.connectable.Connectable;
 import org.apache.nifi.controller.ControllerServiceLookup;
 import org.apache.nifi.controller.flow.FlowManager;
 import org.apache.nifi.controller.service.ControllerServiceProvider;
+import org.apache.nifi.events.BulletinFactory;
 import org.apache.nifi.parameter.ParameterLookup;
 import org.apache.nifi.registry.VariableRegistry;
 import org.apache.nifi.flowanalysis.FlowAnalysisRuleContext;
 import org.apache.nifi.flowanalysis.FlowAnalysisRule;
+import org.apache.nifi.reporting.Bulletin;
+import org.apache.nifi.reporting.BulletinRepository;
+import org.apache.nifi.reporting.Severity;
 
 import java.util.Collections;
 import java.util.HashMap;
@@ -40,8 +45,9 @@ import java.util.Map;
 
 public abstract class AbstractFlowAnalysisRuleContext implements FlowAnalysisRuleContext {
     private final FlowAnalysisRule flowAnalysisRule;
-    private final ControllerServiceProvider serviceProvider;
     private final Map<PropertyDescriptor, String> properties;
+    private final ControllerServiceProvider serviceProvider;
+    private final BulletinRepository bulletinRepository;
     private final Map<PropertyDescriptor, PreparedQuery> preparedQueries;
     private final ParameterLookup parameterLookup;
     private final VariableRegistry variableRegistry;
@@ -50,15 +56,17 @@ public abstract class AbstractFlowAnalysisRuleContext implements FlowAnalysisRul
         FlowAnalysisRule flowAnalysisRule,
         Map<PropertyDescriptor, String> properties,
         ControllerServiceProvider controllerServiceProvider,
+        BulletinRepository bulletinRepository,
         ParameterLookup parameterLookup,
         VariableRegistry variableRegistry
     ) {
+        this.flowAnalysisRule = flowAnalysisRule;
         this.properties = Collections.unmodifiableMap(properties);
         this.serviceProvider = controllerServiceProvider;
-        this.flowAnalysisRule = flowAnalysisRule;
+        this.bulletinRepository = bulletinRepository;
+        this.preparedQueries = new HashMap<>();
         this.parameterLookup = parameterLookup;
         this.variableRegistry = variableRegistry;
-        this.preparedQueries = new HashMap<>();
 
         for (final Map.Entry<PropertyDescriptor, String> entry : properties.entrySet()) {
             final PropertyDescriptor desc = entry.getKey();
@@ -74,6 +82,11 @@ public abstract class AbstractFlowAnalysisRuleContext implements FlowAnalysisRul
 
     protected FlowAnalysisRule getFlowAnalysisRule() {
         return flowAnalysisRule;
+    }
+
+    @Override
+    public BulletinRepository getBulletinRepository() {
+        return bulletinRepository;
     }
 
     @Override
@@ -106,6 +119,20 @@ public abstract class AbstractFlowAnalysisRuleContext implements FlowAnalysisRul
     @Override
     public ControllerServiceLookup getControllerServiceLookup() {
         return serviceProvider;
+    }
+
+    @Override
+    public Bulletin createBulletin(final String category, final Severity severity, final String message) {
+        return BulletinFactory.createBulletin(category, severity.name(), message);
+    }
+
+    @Override
+    public Bulletin createBulletin(final String componentId, final String category, final Severity severity, final String message) {
+        final Connectable connectable = getFlowManager().findConnectable(componentId);
+        if (connectable == null) {
+            throw new IllegalStateException("Cannot create Component-Level Bulletin because no component can be found with ID " + componentId);
+        }
+        return BulletinFactory.createBulletin(connectable, category, severity.name(), message);
     }
 
     protected abstract FlowManager getFlowManager();

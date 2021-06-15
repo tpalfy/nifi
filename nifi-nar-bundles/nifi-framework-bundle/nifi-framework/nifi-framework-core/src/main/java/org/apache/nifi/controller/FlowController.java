@@ -3124,6 +3124,7 @@ public class FlowController implements ReportingTaskProvider, FlowAnalysisRulePr
         }
     }
 
+    // Flow Analysis
     public void setFlowAnalysisContext(FlowAnalysisContext flowAnalysisContext) {
         flowManager.setFlowAnalysisContext(flowAnalysisContext);
     }
@@ -3131,8 +3132,6 @@ public class FlowController implements ReportingTaskProvider, FlowAnalysisRulePr
     public void setFlowAnalyzer(FlowAnalyzer flowAnalyzer) {
         flowManager.setFlowAnalyzer(flowAnalyzer);
     }
-
-    // Flow Analysis
     @Override
     public FlowAnalysisRuleNode createFlowAnalysisRule(String type, String id, BundleCoordinate bundleCoordinate, boolean firstTimeAdded) throws FlowAnalysisRuleInstantiationException {
         return flowManager.createFlowAnalysisRule(type, id, bundleCoordinate, firstTimeAdded);
@@ -3140,7 +3139,7 @@ public class FlowController implements ReportingTaskProvider, FlowAnalysisRulePr
 
     @Override
     public FlowAnalysisRuleNode getFlowAnalysisRuleNode(String identifier) {
-        return flowManager.getFlowAnalysisRule(identifier);
+        return flowManager.getFlowAnalysisRuleNode(identifier);
     }
 
     @Override
@@ -3155,19 +3154,14 @@ public class FlowController implements ReportingTaskProvider, FlowAnalysisRulePr
 
     @Override
     public void enableFlowAnalysisRule(FlowAnalysisRuleNode flowAnalysisRule) {
-        if (flowAnalysisRule.getState() != FlowAnalysisRuleState.DISABLED) {
-            throw new IllegalStateException("Flow Analysis Rule cannot be enabled because it is not disabled");
-        }
-
-        flowAnalysisRule.setState(FlowAnalysisRuleState.ENABLED);
+        flowAnalysisRule.verifyCanEnable();
+        flowAnalysisRule.reloadAdditionalResourcesIfNecessary();
+        flowAnalysisRule.enable();
     }
 
     @Override
     public void disableFlowAnalysisRule(FlowAnalysisRuleNode flowAnalysisRule) {
-        if (flowAnalysisRule.getState() != FlowAnalysisRuleState.ENABLED) {
-                throw new IllegalStateException("Flow Analysis Rule cannot be disabled because it is not enabled");
-            }
-
-        flowAnalysisRule.setState(FlowAnalysisRuleState.DISABLED);
+        flowAnalysisRule.verifyCanDisable();
+        flowAnalysisRule.disable();
     }
 }

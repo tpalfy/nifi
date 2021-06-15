@@ -137,6 +137,7 @@ import java.util.Set;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Function;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 import java.util.zip.GZIPInputStream;
 
 /**
@@ -484,7 +485,7 @@ public class StandardFlowSynchronizer implements FlowSynchronizer {
             flowAnalysisRuleElements.addAll(DomUtils.getChildElementsByTagName(flowAnalysisRulesElement, "flowAnalysisRule"));
         }
 
-        // get/create all the flow analysis rule nodes and DTOs, but don't apply their scheduled state yet
+        // get/create all the flow analysis rule nodes and DTOs, but don't apply their state yet
         final Map<FlowAnalysisRuleNode, FlowAnalysisRuleDTO> flowAnalysisRuleNodesToDTOs = new HashMap<>();
         for (final Element taskElement : flowAnalysisRuleElements) {
             final FlowAnalysisRuleDTO dto = FlowFromDOMFactory.getFlowAnalysisRule(taskElement, encryptor, encodingVersion);
@@ -506,18 +507,21 @@ public class StandardFlowSynchronizer implements FlowSynchronizer {
                     serviceElements, controller, group, encryptor, encodingVersion);
 
                 // If we are moving controller services to the root group we also need to see if any reporting tasks
-                // reference them, and if so we need to clone the CS and update the reporting task reference
+                // or flow analysis rules reference them, and if so we need to clone the CS and update the task- and rule references
                 if (group != null) {
-                    // find all the controller service ids referenced by reporting tasks
-                    final Set<String> controllerServicesInReportingTasks = reportingTaskNodesToDTOs.keySet().stream()
+                    // find all the controller service ids referenced by reporting tasks and flow analysis rules
+                    final Set<String> controllerServicesInReportingTasksAndFlowAnalysisRules = Stream.concat(
+                        reportingTaskNodesToDTOs.keySet().stream(),
+                        flowAnalysisRuleNodesToDTOs.keySet().stream()
+                    )
                         .flatMap(r -> r.getEffectivePropertyValues().entrySet().stream())
                         .filter(e -> e.getKey().getControllerServiceDefinition() != null)
                         .map(Map.Entry::getValue)
                         .collect(Collectors.toSet());
 
-                    // find the controller service nodes for each id referenced by a reporting task
+                    // find the controller service nodes for each id referenced by a reporting task or flow analysis rule
                     final Set<ControllerServiceNode> controllerServicesToClone = controllerServices.keySet().stream()
-                        .filter(cs -> controllerServicesInReportingTasks.contains(cs.getIdentifier()))
+                        .filter(cs -> controllerServicesInReportingTasksAndFlowAnalysisRules.contains(cs.getIdentifier()))
                         .collect(Collectors.toSet());
 
                     // clone the controller services and map the original id to the clone
@@ -529,7 +533,8 @@ public class StandardFlowSynchronizer implements FlowSynchronizer {
                     }
 
                     // update the reporting tasks to reference the cloned controller services
-                    updateReportingTaskControllerServices(reportingTaskNodesToDTOs.keySet(), controllerServiceMapping);
+                    updateReferencedControllerServices(reportingTaskNodesToDTOs.keySet(), controllerServiceMapping);
+                    updateReferencedControllerServices(flowAnalysisRuleNodesToDTOs.keySet(), controllerServiceMapping);
 
                     // enable all the cloned controller services
                     ControllerServiceLoader.enableControllerServices(controllerServiceMapping.values(), controller, autoResumeState);
@@ -547,6 +552,7 @@ public class StandardFlowSynchronizer implements FlowSynchronizer {
             applyReportingTaskScheduleState(controller, entry.getValue(), entry.getKey(), flowAlreadySynchronized, existingFlowEmpty);
         }
 
+        // now that controller services are loaded and enabled we can apply the state to each flow analysis rule
         for (Map.Entry<FlowAnalysisRuleNode, FlowAnalysisRuleDTO> entry : flowAnalysisRuleNodesToDTOs.entrySet()) {
             applyFlowAnalysisRuleState(controller, entry.getValue(), entry.getKey(), flowAlreadySynchronized, existingFlowEmpty);
         }
@@ -573,12 +579,12 @@ public class StandardFlowSynchronizer implements FlowSynchronizer {
         return new Parameter(parameterDescriptor, dto.getValue());
     }
 
-    private void updateReportingTaskControllerServices(final Set<ReportingTaskNode> reportingTasks, final Map<String, ControllerServiceNode> controllerServiceMapping) {
-        for (ReportingTaskNode reportingTask : reportingTasks) {
-            if (reportingTask.getProperties() != null) {
-                reportingTask.pauseValidationTrigger();
+    private <C extends ComponentNode> void updateReferencedControllerServices(final Set<C> componentNodes, final Map<String, ControllerServiceNode> controllerServiceMapping) {
+        for (C componentNode : componentNodes) {
+            if (componentNode.getProperties() != null) {
+                componentNode.pauseValidationTrigger();
                 try {
-                    final Set<Map.Entry<PropertyDescriptor, String>> propertyDescriptors = reportingTask.getEffectivePropertyValues().entrySet().stream()
+                    final Set<Map.Entry<PropertyDescriptor, String>> propertyDescriptors = componentNode.getEffectivePropertyValues().entrySet().stream()
                             .filter(e -> e.getKey().getControllerServiceDefinition() != null)
                             .filter(e -> controllerServiceMapping.containsKey(e.getValue()))
                             .collect(Collectors.toSet());
@@ -591,9 +597,9 @@ public class StandardFlowSynchronizer implements FlowSynchronizer {
                         controllerServiceProps.put(propertyDescriptor.getName(), clone.getIdentifier());
                     }
 
-                    reportingTask.setProperties(controllerServiceProps);
+                    componentNode.setProperties(controllerServiceProps);
                 } finally {
-                    reportingTask.resumeValidationTrigger();
+                    componentNode.resumeValidationTrigger();
                 }
             }
         }
@@ -932,16 +938,16 @@ public class StandardFlowSynchronizer implements FlowSynchronizer {
                         break;
                 }
             } catch (final IllegalStateException ise) {
-                logger.error("Failed to change Scheduled State of {} from {} to {} due to {}", node, node.getState().name(), dto.getState(), ise.toString());
+                logger.error("Failed to change State of {} from {} to {} due to {}", node, node.getState().name(), dto.getState(), ise.toString());
                 logger.error("", ise);
 
-                // create bulletin for the Processor Node
+                // create bulletin for node
                 controller.getBulletinRepository().addBulletin(BulletinFactory.createBulletin("Node Reconnection", Severity.ERROR.name(),
-                        "Failed to change Scheduled State of " + node + " from " + node.getState().name() + " to " + dto.getState() + " due to " + ise.toString()));
+                        "Failed to change State of " + node + " from " + node.getState().name() + " to " + dto.getState() + " due to " + ise.toString()));
 
                 // create bulletin at Controller level.
                 controller.getBulletinRepository().addBulletin(BulletinFactory.createBulletin("Node Reconnection", Severity.ERROR.name(),
-                        "Failed to change Scheduled State of " + node + " from " + node.getState().name() + " to " + dto.getState() + " due to " + ise.toString()));
+                        "Failed to change State of " + node + " from " + node.getState().name() + " to " + dto.getState() + " due to " + ise.toString()));
             }
         }
     }

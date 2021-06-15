@@ -356,7 +356,7 @@ public interface FlowManager {
 
     FlowAnalysisRuleNode createFlowAnalysisRule(String type, String id, BundleCoordinate bundleCoordinate, Set<URL> additionalUrls, boolean firstTimeAdded, boolean register);
 
-    FlowAnalysisRuleNode getFlowAnalysisRule(String taskId);
+    FlowAnalysisRuleNode getFlowAnalysisRuleNode(String taskId);
 
     void removeFlowAnalysisRule(FlowAnalysisRuleNode reportingTask);
 

@@ -21,14 +21,21 @@ import org.apache.nifi.reporting.InitializationException;
 
 public abstract class AbstractFlowAnalysisRule extends AbstractConfigurableComponent implements FlowAnalysisRule {
     private String identifier;
+    private String description;
 
     @Override
     public void initialize(FlowAnalysisRuleInitializationContext config) throws InitializationException {
         identifier = config.getIdentifier();
+        description = getClass().getSimpleName() + "[id=" + identifier + "]";
     }
 
     @Override
     public String getIdentifier() {
         return identifier;
+    }
+
+    @Override
+    public String toString() {
+        return description;
     }
 }

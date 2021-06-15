@@ -241,13 +241,10 @@
                 // reload the referencing flow analysis rules
                 nfFlowAnalysisRule.reload(reference.id);
 
-                // update the current active thread count
-                $('div.' + reference.id + '-active-threads').text(reference.activeThreadCount);
-
                 // update the current state of this flow analysis rule
                 var referencingComponentState = $('div.' + reference.id + '-state');
                 if (referencingComponentState.length) {
-                    updateReferencingSchedulableComponentState(referencingComponentState, reference);
+                    updateReferencingServiceState(referencingComponentState, reference);
                 }
             } else {
                 // reload the referencing services
@@ -442,6 +439,7 @@
         var processors = $('<ul class="referencing-component-listing clear"></ul>');
         var services = $('<ul class="referencing-component-listing clear"></ul>');
         var tasks = $('<ul class="referencing-component-listing clear"></ul>');
+        var rules = $('<ul class="referencing-component-listing clear"></ul>');
         var unauthorized = $('<ul class="referencing-component-listing clear"></ul>');
         $.each(referencingComponents, function (_, referencingComponentEntity) {
             // check the access policy for this referencing component
@@ -591,7 +589,7 @@
                         flowAnalysisRuleGrid.scrollRowIntoView(row);
 
                         // select the flow analysis rule tab
-                        $('#settings-tabs').find('li:nth-child(3)').click();
+                        $('#settings-tabs').find('li:nth-child(4)').click();
 
                         // close the dialog and shell
                         referenceContainer.closest('.dialog').modal('hide');
@@ -599,7 +597,7 @@
 
                     // state
                     var flowAnalysisRuleState = $('<div class="referencing-component-state"></div>').addClass(referencingComponent.id + '-state');
-                    updateReferencingSchedulableComponentState(flowAnalysisRuleState, referencingComponent);
+                    updateReferencingServiceState(flowAnalysisRuleState, referencingComponent);
 
                     // bulletins
                     var flowAnalysisRuleBulletins = $('<div class="referencing-component-bulletins"></div>').addClass(referencingComponent.id + '-bulletins');
@@ -607,15 +605,9 @@
                     // type
                     var flowAnalysisRuleType = $('<span class="referencing-component-type"></span>').text(nfCommon.substringAfterLast(referencingComponent.type, '.'));
 
-                    // active thread count
-                    var flowAnalysisRuleActiveThreadCount = $('<span class="referencing-component-active-thread-count"></span>').addClass(referencingComponent.id + '-active-threads');
-                    if (nfCommon.isDefinedAndNotNull(referencingComponent.activeThreadCount) && referencingComponent.activeThreadCount > 0) {
-                        flowAnalysisRuleActiveThreadCount.text('(' + referencingComponent.activeThreadCount + ')');
-                    }
-
                     // flow analysis rule
-                    var flowAnalysisRuleItem = $('<li></li>').append(flowAnalysisRuleState).append(flowAnalysisRuleBulletins).append(flowAnalysisRuleLink).append(flowAnalysisRuleType).append(flowAnalysisRuleActiveThreadCount);
-                    tasks.append(flowAnalysisRuleItem);
+                    var flowAnalysisRuleItem = $('<li></li>').append(flowAnalysisRuleState).append(flowAnalysisRuleBulletins).append(flowAnalysisRuleLink).append(flowAnalysisRuleType);
+                    rules.append(flowAnalysisRuleItem);
                 }
             }
         });
@@ -647,6 +639,7 @@
         // create blocks for each type of component
         createReferenceBlock('Processors', processors);
         createReferenceBlock('Reporting Tasks', tasks);
+        createReferenceBlock('Flow Analysis Rules', rules);
         createReferenceBlock('Controller Services', services);
         createReferenceBlock('Unauthorized', unauthorized);
 

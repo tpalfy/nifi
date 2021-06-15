@@ -142,7 +142,7 @@ public class MainFlowAnalyzer implements FlowAnalyzer {
         Set<FlowAnalysisRuleNode> flowAnalysisRules = flowAnalysisRuleProvider.getAllFlowAnalysisRules();
 
         flowAnalysisRules.stream()
-            .filter(flowAnalysisRuleNode -> FlowAnalysisRuleState.ENABLED.equals(flowAnalysisRuleNode.getState()))
+            .filter(FlowAnalysisRuleNode::isEnabled)
             .forEach(flowAnalysisRuleNode -> {
                 try {
                     Collection<FlowAnalysisResult> flowAnalysisResults = flowAnalysisRuleNode.getFlowAnalysisRule().analyzeFlow(

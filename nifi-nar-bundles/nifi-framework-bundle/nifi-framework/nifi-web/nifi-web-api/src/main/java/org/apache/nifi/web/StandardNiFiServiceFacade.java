@@ -3652,6 +3652,9 @@ public class StandardNiFiServiceFacade implements NiFiServiceFacade {
                 case REPORTING_TASK:
                     authorizable = authorizableLookup.getReportingTask(sourceId).getAuthorizable();
                     break;
+                case FLOW_ANALYSIS_RULE:
+                    authorizable = authorizableLookup.getFlowAnalysisRule(sourceId).getAuthorizable();
+                    break;
                 case CONTROLLER_SERVICE:
                     authorizable = authorizableLookup.getControllerService(sourceId).getAuthorizable();
                     break;
@@ -4013,6 +4016,24 @@ public class StandardNiFiServiceFacade implements NiFiServiceFacade {
             }
         }
         controllerBulletinsEntity.setReportingTaskBulletins(reportingTaskBulletinEntities);
+        
+        // get the flow analysis rule bulletins
+        final BulletinQuery flowAnalysisRuleQuery = new BulletinQuery.Builder().sourceType(ComponentType.FLOW_ANALYSIS_RULE).build();
+        final List<Bulletin> allFlowAnalysisRuleBulletins = bulletinRepository.findBulletins(flowAnalysisRuleQuery);
+        final List<BulletinEntity> flowAnalysisRuleBulletinEntities = new ArrayList<>();
+        for (final Bulletin bulletin : allFlowAnalysisRuleBulletins) {
+            try {
+                final Authorizable flowAnalysisRuleAuthorizable = authorizableLookup.getFlowAnalysisRule(bulletin.getSourceId()).getAuthorizable();
+                final boolean flowAnalysisRuleAuthorizableAuthorized = flowAnalysisRuleAuthorizable.isAuthorized(authorizer, RequestAction.READ, user);
+
+                final BulletinEntity flowAnalysisRuleBulletin = entityFactory.createBulletinEntity(dtoFactory.createBulletinDto(bulletin), flowAnalysisRuleAuthorizableAuthorized);
+                flowAnalysisRuleBulletinEntities.add(flowAnalysisRuleBulletin);
+                controllerBulletinEntities.add(flowAnalysisRuleBulletin);
+            } catch (final ResourceNotFoundException e) {
+                // flow analysis rule missing.. skip
+            }
+        }
+        controllerBulletinsEntity.setFlowAnalysisRuleBulletins(flowAnalysisRuleBulletinEntities);
 
         controllerBulletinsEntity.setBulletins(pruneAndSortBulletins(controllerBulletinEntities, BulletinRepository.MAX_BULLETINS_FOR_CONTROLLER));
         return controllerBulletinsEntity;
@@ -5345,6 +5366,9 @@ public class StandardNiFiServiceFacade implements NiFiServiceFacade {
                     break;
                 case ReportingTask:
                     authorizable = authorizableLookup.getReportingTask(sourceId).getAuthorizable();
+                    break;
+                case FlowAnalysisRule:
+                    authorizable = authorizableLookup.getFlowAnalysisRule(sourceId).getAuthorizable();
                     break;
                 case ControllerService:
                     authorizable = authorizableLookup.getControllerService(sourceId).getAuthorizable();

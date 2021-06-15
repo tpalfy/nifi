@@ -24,6 +24,7 @@ import org.apache.nifi.flow.VersionedControllerService;
 import org.apache.nifi.logging.ComponentLog;
 import org.apache.nifi.reporting.InitializationException;
 
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
@@ -98,6 +99,6 @@ public class GhostFlowAnalysisRule implements FlowAnalysisRule {
         FlowDetails flowDetails,
         Function<String, VersionedControllerService> controllerServiceDetailsProvider
     ) {
-        return null;
+        return new ArrayList<>();
     }
 }

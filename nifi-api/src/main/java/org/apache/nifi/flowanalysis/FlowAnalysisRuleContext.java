@@ -20,6 +20,9 @@ import org.apache.nifi.components.PropertyDescriptor;
 import org.apache.nifi.components.state.StateManager;
 import org.apache.nifi.context.PropertyContext;
 import org.apache.nifi.controller.ControllerServiceLookup;
+import org.apache.nifi.reporting.Bulletin;
+import org.apache.nifi.reporting.BulletinRepository;
+import org.apache.nifi.reporting.Severity;
 
 import java.util.Map;
 
@@ -37,6 +40,37 @@ public interface FlowAnalysisRuleContext extends PropertyContext {
      * PropertyDescriptor has a default value
      */
     Map<PropertyDescriptor, String> getProperties();
+
+    /**
+     * @return the {@link BulletinRepository} that can be used to analyze
+     * Bulletins that have been emitted and register new Bulletins
+     */
+    BulletinRepository getBulletinRepository();
+
+    /**
+     * Creates a controller-level {@link Bulletin} with the given category, severity
+     * level, and message, so that the Bulletin can be added to the
+     * {@link BulletinRepository}. Access to this bulletin will be enforce through
+     * permissions on the controller.
+     *
+     * @param category of bulletin
+     * @param severity of bulletin
+     * @param message of bulletin
+     * @return new bulletin
+     */
+    Bulletin createBulletin(String category, Severity severity, String message);
+
+    /**
+     * Creates a {@link Bulletin} for the component with the specified
+     * identifier.
+     *
+     * @param componentId the ID of the component
+     * @param category the name of the bulletin's category
+     * @param severity the severity level of the bulletin
+     * @param message the bulletin's message
+     * @return new bulletin
+     */
+    Bulletin createBulletin(String componentId, String category, Severity severity, String message);
 
     /**
      * @return the {@link ControllerServiceLookup} which can be used to obtain

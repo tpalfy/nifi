@@ -1204,11 +1204,11 @@ To add a Controller Service for a reporting task, select Controller Settings fro
 
 image:controller-settings-selection.png["Global Menu - Controller Settings"]
 
-This displays the NiFi Settings window. The window has four tabs: General, Reporting Task Controller Services, Reporting Tasks and Registry Clients. The General tab provides settings for the overall maximum thread counts of the instance.
+This displays the NiFi Settings window. The window has four tabs: General, Reporting Task/flow Analysis Rule Controller Services, Reporting Tasks and Registry Clients. The General tab provides settings for the overall maximum thread counts of the instance.
 
 image:settings-general-tab.png["Controller Settings General Tab"]
 
-To the right of the General tab is the Reporting Task Controller Services tab. From this tab, the DFM may click the `+` button in the upper-right corner to create a new Controller Service.
+To the right of the General tab is the Reporting Task/Flow Analysis Rule Controller Services tab. From this tab, the DFM may click the `+` button in the upper-right corner to create a new Controller Service.
 
 image:controller-services-tab.png["Controller Services Tab"]
 
