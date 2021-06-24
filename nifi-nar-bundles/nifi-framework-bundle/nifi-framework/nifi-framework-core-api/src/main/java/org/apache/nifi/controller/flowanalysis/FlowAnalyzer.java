@@ -19,16 +19,15 @@ package org.apache.nifi.controller.flowanalysis;
 import org.apache.nifi.controller.ProcessorNode;
 import org.apache.nifi.controller.service.ControllerServiceNode;
 import org.apache.nifi.controller.service.ControllerServiceProvider;
-import org.apache.nifi.flowanalysis.FlowAnalysisResults;
 import org.apache.nifi.nar.ExtensionManager;
 import org.apache.nifi.flow.VersionedProcessGroup;
 
 public interface FlowAnalyzer {
-    FlowAnalysisResults analyzeProcessor(ProcessorNode processorNode);
+    void analyzeProcessor(ProcessorNode processorNode);
 
-    FlowAnalysisResults analyzeControllerService(ControllerServiceNode controllerServiceNode);
+    void analyzeControllerService(ControllerServiceNode controllerServiceNode);
 
-    FlowAnalysisResults analyzeProcessGroup(VersionedProcessGroup processGroup);
+    void analyzeProcessGroup(VersionedProcessGroup processGroup);
 
     void setFlowAnalysisRuleProvider(FlowAnalysisRuleProvider flowAnalysisRuleProvider);
 

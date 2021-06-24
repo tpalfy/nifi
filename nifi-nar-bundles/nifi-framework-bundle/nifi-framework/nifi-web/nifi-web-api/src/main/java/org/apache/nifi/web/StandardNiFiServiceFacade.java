@@ -93,7 +93,6 @@ import org.apache.nifi.controller.status.ProcessGroupStatus;
 import org.apache.nifi.controller.status.ProcessorStatus;
 import org.apache.nifi.diagnostics.SystemDiagnostics;
 import org.apache.nifi.events.BulletinFactory;
-import org.apache.nifi.flowanalysis.FlowAnalysisResults;
 import org.apache.nifi.groups.ProcessGroup;
 import org.apache.nifi.groups.ProcessGroupCounts;
 import org.apache.nifi.groups.RemoteProcessGroup;
@@ -5747,7 +5746,7 @@ public class StandardNiFiServiceFacade implements NiFiServiceFacade {
     }
 
     @Override
-    public FlowAnalysisResults analyzeFlow(String processGroupId) {
+    public void analyzeFlow(String processGroupId) {
         ProcessGroup processGroup = processGroupDAO.getProcessGroup(processGroupId);
 
         NiFiRegistryFlowMapper mapper = new NiFiRegistryFlowMapper(controllerFacade.getExtensionManager(), Function.identity());
@@ -5757,9 +5756,7 @@ public class StandardNiFiServiceFacade implements NiFiServiceFacade {
             controllerFacade.getControllerServiceProvider()
         );
 
-        FlowAnalysisResults result = flowAnalyzer.analyzeProcessGroup(nonVersionedProcessGroup);
-
-        return result;
+        flowAnalyzer.analyzeProcessGroup(nonVersionedProcessGroup);
     }
 
     @Override

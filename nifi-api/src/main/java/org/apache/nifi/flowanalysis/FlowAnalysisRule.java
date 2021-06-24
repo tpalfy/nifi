@@ -18,15 +18,15 @@ package org.apache.nifi.flowanalysis;
 
 import org.apache.nifi.components.ConfigurableComponent;
 import org.apache.nifi.flow.VersionedControllerService;
-import org.apache.nifi.flow.VersionedProcessGroup;
 import org.apache.nifi.reporting.InitializationException;
+
 import java.util.Optional;
 import java.util.function.Function;
 
 public interface FlowAnalysisRule extends ConfigurableComponent {
     void initialize(FlowAnalysisRuleInitializationContext config) throws InitializationException;
 
-    default Optional<FlowAnalysisResult> analyzeComponent(
+    default Optional<ComponentAnalysisResult> analyzeComponent(
         String ruleName,
         FlowAnalysisRuleContext context,
         Object component,
@@ -35,12 +35,12 @@ public interface FlowAnalysisRule extends ConfigurableComponent {
         return Optional.empty();
     }
 
-    default Optional<FlowAnalysisResult> analyzeProcessGroup(
-        String ruleName,
-        FlowAnalysisRuleContext context,
-        VersionedProcessGroup processGroup,
-        Function<String, VersionedControllerService> controllerServiceDetailsProvider
-    ) {
-        return Optional.empty();
-    }
+//    default Collection<ComponentAnalysisResult> analyzeProcessGroup(
+//        String ruleName,
+//        FlowAnalysisRuleContext context,
+//        VersionedProcessGroup processGroup,
+//        Function<String, VersionedControllerService> controllerServiceDetailsProvider
+//    ) {
+//        return Collections.emptySet();
+//    }
 }

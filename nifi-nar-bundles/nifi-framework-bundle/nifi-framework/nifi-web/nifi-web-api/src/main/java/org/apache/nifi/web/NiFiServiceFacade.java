@@ -25,7 +25,6 @@ import org.apache.nifi.components.ConfigurableComponent;
 import org.apache.nifi.controller.ScheduledState;
 import org.apache.nifi.controller.repository.claim.ContentDirection;
 import org.apache.nifi.controller.service.ControllerServiceState;
-import org.apache.nifi.flowanalysis.FlowAnalysisResults;
 import org.apache.nifi.groups.ProcessGroup;
 import org.apache.nifi.parameter.ParameterContext;
 import org.apache.nifi.registry.flow.ExternalControllerServiceReference;
@@ -2436,7 +2435,7 @@ public interface NiFiServiceFacade {
 
     FlowAnalysisRuleEntity deleteFlowAnalysisRule(Revision revision, String id);
 
-    FlowAnalysisResults analyzeFlow(String processGroupId);
+    void analyzeFlow(String processGroupId);
 
     ConcurrentMap<String, ConcurrentMap<String, RuleViolation>> getRuleViolations();
 

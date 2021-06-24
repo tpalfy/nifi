@@ -20,7 +20,7 @@ import org.apache.nifi.components.PropertyDescriptor;
 import org.apache.nifi.flow.VersionedControllerService;
 import org.apache.nifi.flow.VersionedProcessor;
 import org.apache.nifi.flowanalysis.AbstractFlowAnalysisRule;
-import org.apache.nifi.flowanalysis.FlowAnalysisResult;
+import org.apache.nifi.flowanalysis.ComponentAnalysisResult;
 import org.apache.nifi.flowanalysis.FlowAnalysisRuleContext;
 import org.apache.nifi.processor.util.StandardValidators;
 
@@ -54,7 +54,7 @@ public class DisallowProcessorType extends AbstractFlowAnalysisRule {
     }
 
     @Override
-    public Optional<FlowAnalysisResult> analyzeComponent(
+    public Optional<ComponentAnalysisResult> analyzeComponent(
         String ruleName,
         FlowAnalysisRuleContext context,
         Object component,
@@ -69,13 +69,11 @@ public class DisallowProcessorType extends AbstractFlowAnalysisRule {
             encounteredProcessorType = encounteredProcessorType.substring(encounteredProcessorType.lastIndexOf(".") + 1);
 
             if (encounteredProcessorType.equals(processorType)) {
-                FlowAnalysisResult flowAnalysisResult = new FlowAnalysisResult(
-                    processor.getIdentifier(),
-                    ruleName,
+                ComponentAnalysisResult componentAnalysisResult = new ComponentAnalysisResult(
                     "'" + processorType + "' is not allowed!"
                 );
 
-                return Optional.of(flowAnalysisResult);
+                return Optional.of(componentAnalysisResult);
             }
         }
 

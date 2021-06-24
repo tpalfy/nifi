@@ -18,23 +18,11 @@ package org.apache.nifi.flowanalysis;
 
 import java.util.StringJoiner;
 
-public class FlowAnalysisResult {
-    private final String subjectId;
-    private final String ruleName;
+public class ComponentAnalysisResult {
     private final String message;
 
-    public FlowAnalysisResult(String subjectId, String ruleName, String messages) {
-        this.subjectId = subjectId;
-        this.ruleName = ruleName;
+    public ComponentAnalysisResult(String messages) {
         this.message = messages;
-    }
-
-    public String getSubjectId() {
-        return subjectId;
-    }
-
-    public String getRuleName() {
-        return ruleName;
     }
 
     public String getMessage() {
@@ -43,9 +31,7 @@ public class FlowAnalysisResult {
 
     @Override
     public String toString() {
-        return new StringJoiner(", ", FlowAnalysisResult.class.getSimpleName() + "[", "]")
-            .add("subjectId='" + subjectId + "'")
-            .add("ruleName='" + ruleName + "'")
+        return new StringJoiner(", ", ComponentAnalysisResult.class.getSimpleName() + "[", "]")
             .add("message='" + message + "'")
             .toString();
     }
