@@ -20,15 +20,11 @@ package org.apache.nifi.flowanalysis;
 import org.apache.nifi.components.PropertyDescriptor;
 import org.apache.nifi.components.ValidationContext;
 import org.apache.nifi.components.ValidationResult;
-import org.apache.nifi.flow.VersionedControllerService;
 import org.apache.nifi.logging.ComponentLog;
 import org.apache.nifi.reporting.InitializationException;
-
-import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
-import java.util.function.Function;
 
 public class GhostFlowAnalysisRule implements FlowAnalysisRule {
 
@@ -90,15 +86,5 @@ public class GhostFlowAnalysisRule implements FlowAnalysisRule {
     @Override
     public void initialize(FlowAnalysisRuleInitializationContext config) throws InitializationException {
         this.logger = config.getLogger();
-    }
-
-    @Override
-    public Collection<FlowAnalysisResult> analyzeFlow(
-        String ruleName,
-        FlowAnalysisRuleContext context,
-        FlowDetails flowDetails,
-        Function<String, VersionedControllerService> controllerServiceDetailsProvider
-    ) {
-        return new ArrayList<>();
     }
 }

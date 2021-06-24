@@ -34,24 +34,25 @@ import org.apache.nifi.parameter.ParameterLookup;
 import org.apache.nifi.registry.ComponentVariableRegistry;
 import org.apache.nifi.flowanalysis.FlowAnalysisRuleContext;
 import org.apache.nifi.flowanalysis.FlowAnalysisRule;
+import org.apache.nifi.validation.FlowAnalysisContext;
 
 public class StandardFlowAnalysisRuleNode extends AbstractFlowAnalysisRuleNode implements FlowAnalysisRuleNode {
 
     private final FlowController flowController;
 
     public StandardFlowAnalysisRuleNode(final LoggableComponent<FlowAnalysisRule> reportingTask, final String id, final FlowController controller,
-                                        final ValidationContextFactory validationContextFactory,
+                                        final ValidationContextFactory validationContextFactory, final FlowAnalysisContext flowAnalysisContext,
                                         final ComponentVariableRegistry variableRegistry, final ReloadComponent reloadComponent, final ExtensionManager extensionManager,
                                         final ValidationTrigger validationTrigger) {
-        super(reportingTask, id, controller.getControllerServiceProvider(), validationContextFactory, variableRegistry, reloadComponent, extensionManager, validationTrigger);
+        super(reportingTask, id, controller.getControllerServiceProvider(), validationContextFactory, flowAnalysisContext, variableRegistry, reloadComponent, extensionManager, validationTrigger);
         this.flowController = controller;
     }
 
     public StandardFlowAnalysisRuleNode(final LoggableComponent<FlowAnalysisRule> reportingTask, final String id, final FlowController controller,
-                                        final ValidationContextFactory validationContextFactory,
+                                        final ValidationContextFactory validationContextFactory, final FlowAnalysisContext flowAnalysisContext,
                                         final String componentType, final String canonicalClassName, final ComponentVariableRegistry variableRegistry,
                                         final ReloadComponent reloadComponent, final ExtensionManager extensionManager, final ValidationTrigger validationTrigger, final boolean isExtensionMissing) {
-        super(reportingTask, id, controller.getControllerServiceProvider(), validationContextFactory, componentType, canonicalClassName,
+        super(reportingTask, id, controller.getControllerServiceProvider(), validationContextFactory, flowAnalysisContext, componentType, canonicalClassName,
             variableRegistry, reloadComponent, extensionManager, validationTrigger, isExtensionMissing);
         this.flowController = controller;
     }
@@ -74,7 +75,7 @@ public class StandardFlowAnalysisRuleNode extends AbstractFlowAnalysisRuleNode i
 
     @Override
     public Class<?> getComponentClass() {
-        return getFlowAnalysisContext().getClass();
+        return getFlowAnalysisRuleContext().getClass();
     }
 
     @Override
@@ -83,7 +84,7 @@ public class StandardFlowAnalysisRuleNode extends AbstractFlowAnalysisRuleNode i
     }
 
     @Override
-    public FlowAnalysisRuleContext getFlowAnalysisContext() {
+    public FlowAnalysisRuleContext getFlowAnalysisRuleContext() {
         return new StandardFlowAnalysisRuleContext(
             getFlowAnalysisRule(),
             getEffectivePropertyValues(),

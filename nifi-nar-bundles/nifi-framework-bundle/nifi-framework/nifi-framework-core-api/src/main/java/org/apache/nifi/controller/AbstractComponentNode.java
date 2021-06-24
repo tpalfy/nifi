@@ -623,7 +623,6 @@ public abstract class AbstractComponentNode implements ComponentNode {
                 .map(Map::values)
                 .ifPresent(ruleViolations -> ruleViolations.stream()
                     .filter(ruleViolation -> ruleViolation.getRuleType() == FlowAnalysisRuleType.POLICY)
-                    .filter(RuleViolation::isAvailable)
                     .filter(RuleViolation::isEnabled)
                     .forEach(ruleViolation -> validationResults.add(
                         new ValidationResult.Builder()

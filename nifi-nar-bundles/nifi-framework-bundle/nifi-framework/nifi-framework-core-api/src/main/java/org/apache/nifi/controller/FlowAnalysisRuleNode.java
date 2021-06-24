@@ -33,7 +33,7 @@ public interface FlowAnalysisRuleNode extends ComponentNode {
 
     void setFlowAnalysisRule(LoggableComponent<FlowAnalysisRule> flowAnalysisRule);
 
-    FlowAnalysisRuleContext getFlowAnalysisContext();
+    FlowAnalysisRuleContext getFlowAnalysisRuleContext();
 
     ConfigurationContext getConfigurationContext();
 

@@ -26,7 +26,6 @@ public class RuleViolation {
     private final String ruleName;
     private final String errorMessage;
 
-    private boolean available;
     private boolean enabled;
 
     public RuleViolation(FlowAnalysisRuleType ruleType, String subjectId, String ruleName, String errorMessage) {
@@ -34,7 +33,6 @@ public class RuleViolation {
         this.subjectId = subjectId;
         this.ruleName = ruleName;
         this.errorMessage = errorMessage;
-        this.available = true;
         this.enabled = true;
     }
 
@@ -54,13 +52,6 @@ public class RuleViolation {
         return errorMessage;
     }
 
-    public boolean isAvailable() {
-        return available;
-    }
-
-    public void setAvailable(boolean available) {
-        this.available = available;
-    }
 
     public boolean isEnabled() {
         return enabled;
@@ -77,7 +68,6 @@ public class RuleViolation {
             .add("subjectId='" + subjectId + "'")
             .add("ruleName='" + ruleName + "'")
             .add("errorMessage='" + errorMessage + "'")
-            .add("available=" + available)
             .add("enabled=" + enabled)
             .toString();
     }

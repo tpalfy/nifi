@@ -28,7 +28,7 @@ public interface FlowAnalyzer {
 
     FlowAnalysisResults analyzeControllerService(ControllerServiceNode controllerServiceNode);
 
-    FlowAnalysisResults analyzeFlow(VersionedProcessGroup processGroup);
+    FlowAnalysisResults analyzeProcessGroup(VersionedProcessGroup processGroup);
 
     void setFlowAnalysisRuleProvider(FlowAnalysisRuleProvider flowAnalysisRuleProvider);
 

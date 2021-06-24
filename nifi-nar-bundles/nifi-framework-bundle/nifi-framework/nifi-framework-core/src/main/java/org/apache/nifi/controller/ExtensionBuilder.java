@@ -619,13 +619,13 @@ public class ExtensionBuilder {
         final FlowAnalysisRuleNode taskNode;
         if (creationSuccessful) {
             taskNode = new StandardFlowAnalysisRuleNode(flowAnalysisRule, identifier, flowController,
-                validationContextFactory, componentVarRegistry, reloadComponent, extensionManager, validationTrigger);
+                validationContextFactory, flowAnalysisContext, componentVarRegistry, reloadComponent, extensionManager, validationTrigger);
             taskNode.setName(taskNode.getFlowAnalysisRule().getClass().getSimpleName());
         } else {
             final String simpleClassName = type.contains(".") ? StringUtils.substringAfterLast(type, ".") : type;
             final String componentType = "(Missing) " + simpleClassName;
 
-            taskNode = new StandardFlowAnalysisRuleNode(flowAnalysisRule, identifier, flowController, validationContextFactory,
+            taskNode = new StandardFlowAnalysisRuleNode(flowAnalysisRule, identifier, flowController, validationContextFactory, flowAnalysisContext,
                     componentType, type, componentVarRegistry, reloadComponent, extensionManager, validationTrigger, true);
             taskNode.setName(componentType);
         }

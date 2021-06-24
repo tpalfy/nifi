@@ -5757,7 +5757,7 @@ public class StandardNiFiServiceFacade implements NiFiServiceFacade {
             controllerFacade.getControllerServiceProvider()
         );
 
-        FlowAnalysisResults result = flowAnalyzer.analyzeFlow(nonVersionedProcessGroup);
+        FlowAnalysisResults result = flowAnalyzer.analyzeProcessGroup(nonVersionedProcessGroup);
 
         return result;
     }
@@ -5772,7 +5772,7 @@ public class StandardNiFiServiceFacade implements NiFiServiceFacade {
 
     @Override
     public void updateRuleViolation(String subjectId, String ruleName, Boolean enabled) {
-        flowAnalysisContext.updateOneRuleViolation(subjectId, ruleName, enabled);
+        flowAnalysisContext.updateRuleViolation(subjectId, ruleName, enabled);
         controllerFacade.save();
     }
 

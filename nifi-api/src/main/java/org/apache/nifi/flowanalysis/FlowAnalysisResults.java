@@ -25,8 +25,8 @@ import java.util.Set;
 public class FlowAnalysisResults {
     private Map<FlowAnalysisRuleType, Set<FlowAnalysisResult>> typeToResults = new HashMap<>();
 
-    public void addResults(FlowAnalysisRuleType type, Collection<FlowAnalysisResult> results) {
-        typeToResults.computeIfAbsent(type, __ -> new HashSet<>()).addAll(results);
+    public void addResult(FlowAnalysisRuleType type, FlowAnalysisResult result) {
+        typeToResults.computeIfAbsent(type, __ -> new HashSet<>()).add(result);
     }
 
     public Map<FlowAnalysisRuleType, Set<FlowAnalysisResult>> getResults() {

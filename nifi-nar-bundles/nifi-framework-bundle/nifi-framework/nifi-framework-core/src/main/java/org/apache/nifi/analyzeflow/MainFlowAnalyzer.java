@@ -22,11 +22,8 @@ import org.apache.nifi.controller.flowanalysis.FlowAnalyzer;
 import org.apache.nifi.controller.FlowAnalysisRuleNode;
 import org.apache.nifi.controller.service.ControllerServiceNode;
 import org.apache.nifi.controller.service.ControllerServiceProvider;
-import org.apache.nifi.flowanalysis.FlowDetails;
 import org.apache.nifi.flowanalysis.FlowAnalysisResult;
 import org.apache.nifi.flowanalysis.FlowAnalysisResults;
-import org.apache.nifi.flowanalysis.FlowAnalysisRuleState;
-import org.apache.nifi.flowanalysis.FlowAnalysisRuleType;
 import org.apache.nifi.nar.ExtensionManager;
 import org.apache.nifi.flow.VersionedControllerService;
 import org.apache.nifi.flow.VersionedProcessGroup;
@@ -39,10 +36,9 @@ import org.slf4j.LoggerFactory;
 
 import java.time.Duration;
 import java.time.Instant;
-import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
-import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
 import java.util.function.Function;
 
@@ -83,10 +79,15 @@ public class MainFlowAnalyzer implements FlowAnalyzer {
             new HashMap<>()
         );
 
-        FlowDetails flowDetails = new FlowDetails();
-        flowDetails.getProcessors().add(versionedProcessor);
-
-        return analyze(flowDetails);
+        return analyze(
+            versionedProcessor.getIdentifier(),
+            flowAnalysisRuleNode -> flowAnalysisRuleNode.getFlowAnalysisRule().analyzeComponent(
+                flowAnalysisRuleNode.getName(),
+                flowAnalysisRuleNode.getFlowAnalysisRuleContext(),
+                versionedProcessor,
+                controllerServiceDetailsProvider
+            )
+        );
     }
 
     @Override
@@ -102,39 +103,33 @@ public class MainFlowAnalyzer implements FlowAnalyzer {
             new HashMap<>()
         );
 
-        FlowDetails flowDetails = new FlowDetails();
-        flowDetails.getControllerServices().add(versionedControllerService);
-
-        return analyze(flowDetails);
+        return analyze(
+            versionedControllerService.getIdentifier(),
+            flowAnalysisRuleNode -> flowAnalysisRuleNode.getFlowAnalysisRule().analyzeComponent(
+                flowAnalysisRuleNode.getName(),
+                flowAnalysisRuleNode.getFlowAnalysisRuleContext(),
+                versionedControllerService,
+                controllerServiceDetailsProvider
+            )
+        );
     }
 
     @Override
-    public FlowAnalysisResults analyzeFlow(VersionedProcessGroup processGroup) {
-        FlowDetails flowDetails = new FlowDetails();
+    public FlowAnalysisResults analyzeProcessGroup(VersionedProcessGroup processGroup) {
+        logger.debug("Running analysis on process group {}.", processGroup.getIdentifier());
 
-        accumulateComponents(processGroup, flowDetails);
-
-        logger.debug("Running analysis on entire flow ({} components).", flowDetails.size());
-
-        return analyze(flowDetails);
+        return analyze(
+            processGroup.getIdentifier(),
+            flowAnalysisRuleNode -> flowAnalysisRuleNode.getFlowAnalysisRule().analyzeProcessGroup(
+                flowAnalysisRuleNode.getName(),
+                flowAnalysisRuleNode.getFlowAnalysisRuleContext(),
+                processGroup,
+                controllerServiceDetailsProvider
+            )
+        );
     }
 
-    private NiFiRegistryFlowMapper createMapper() {
-        NiFiRegistryFlowMapper mapper = new NiFiRegistryFlowMapper(extensionManager, Function.identity());
-
-        return mapper;
-    }
-
-    private void accumulateComponents(VersionedProcessGroup group, FlowDetails flowDetails) {
-        flowDetails.getProcessors().addAll(group.getProcessors());
-        flowDetails.getControllerServices().addAll(group.getControllerServices());
-
-        for (VersionedProcessGroup childGroup : group.getProcessGroups()) {
-            accumulateComponents(childGroup, flowDetails);
-        }
-    }
-
-    private FlowAnalysisResults analyze(FlowDetails flowDetails) {
+    private FlowAnalysisResults analyze(String subjectId, Function<FlowAnalysisRuleNode, Optional<FlowAnalysisResult>> ruleRunner) {
         Instant start = Instant.now();
 
         FlowAnalysisResults result = new FlowAnalysisResults();
@@ -144,21 +139,34 @@ public class MainFlowAnalyzer implements FlowAnalyzer {
         flowAnalysisRules.stream()
             .filter(FlowAnalysisRuleNode::isEnabled)
             .forEach(flowAnalysisRuleNode -> {
-                try {
-                    Collection<FlowAnalysisResult> flowAnalysisResults = flowAnalysisRuleNode.getFlowAnalysisRule().analyzeFlow(
-                        flowAnalysisRuleNode.getName(),
-                        flowAnalysisRuleNode.getFlowAnalysisContext(),
-                        flowDetails,
-                        controllerServiceDetailsProvider
-                    );
+                String ruleName = flowAnalysisRuleNode.getName();
 
-                    result.addResults(flowAnalysisRuleNode.getRuleType(), flowAnalysisResults);
+                try {
+                    Optional<FlowAnalysisResult> analysisResultOptional = ruleRunner.apply(flowAnalysisRuleNode);
+
+                    analysisResultOptional.ifPresent(analysisResult -> {
+                        flowAnalysisContext.addRuleViolation(
+                            analysisResult.getSubjectId(),
+                            new RuleViolation(
+                                flowAnalysisRuleNode.getRuleType(),
+                                analysisResult.getSubjectId(),
+                                analysisResult.getRuleName(),
+                                analysisResult.getMessage())
+                        );
+
+                        result.addResult(flowAnalysisRuleNode.getRuleType(), analysisResult);
+                    });
+
+                    if (!analysisResultOptional.isPresent()) {
+                        flowAnalysisContext.removeRuleViolation(subjectId, ruleName);
+                    }
                 } catch (Exception e) {
-                    logger.error("FlowAnalysis error while running '{}'", flowAnalysisRuleNode.getName(), e);
+                    logger.error("FlowAnalysis error while running '{}' against '{}'", ruleName, subjectId, e);
                 }
             });
 
-        updateFlowAnalysisContext(flowDetails.targetIds(), result.getResults());
+        flowAnalysisContext.getIdToRuleNameToRuleViolations().entrySet()
+            .removeIf((idAndRuleNameToRuleViolations -> idAndRuleNameToRuleViolations.getValue().isEmpty()));
 
         Instant end = Instant.now();
 
@@ -169,28 +177,10 @@ public class MainFlowAnalyzer implements FlowAnalyzer {
         return result;
     }
 
-    private void updateFlowAnalysisContext(Set<String> affectedComponentIds, Map<FlowAnalysisRuleType, Set<FlowAnalysisResult>> ruleTypeToAnalysisResults) {
-        flowAnalysisContext.getIdToRuleNameToRuleViolations()
-            .values()
-            .stream()
-            .map(Map::values)
-            .flatMap(Collection::stream)
-            .filter(ruleViolation -> affectedComponentIds.contains(ruleViolation.getSubjectId()))
-            .forEach(ruleViolation -> ruleViolation.setAvailable(false));
+    public NiFiRegistryFlowMapper createMapper() {
+        NiFiRegistryFlowMapper mapper = new NiFiRegistryFlowMapper(extensionManager, Function.identity());
 
-        ruleTypeToAnalysisResults
-            .forEach((ruleType, analysisResults) -> analysisResults
-                .forEach(analysisResult -> flowAnalysisContext
-                    .addRuleViolation(analysisResult.getSubjectId(), new RuleViolation(ruleType, analysisResult.getSubjectId(), analysisResult.getRuleName(), analysisResult.getMessage()))
-                )
-            );
-
-        flowAnalysisContext.getIdToRuleNameToRuleViolations().forEach(
-            (__, ruleNameToRuleViolations) -> ruleNameToRuleViolations.entrySet()
-                .removeIf(ruleNameAndRuleViolation -> !ruleNameAndRuleViolation.getValue().isAvailable())
-        );
-        flowAnalysisContext.getIdToRuleNameToRuleViolations().entrySet()
-            .removeIf((idAndRuleNameToRuleViolations -> idAndRuleNameToRuleViolations.getValue().isEmpty()));
+        return mapper;
     }
 
     @Override

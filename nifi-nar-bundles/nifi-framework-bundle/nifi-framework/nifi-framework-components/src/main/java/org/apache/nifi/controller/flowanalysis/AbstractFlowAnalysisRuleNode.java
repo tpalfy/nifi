@@ -46,6 +46,7 @@ import org.apache.nifi.registry.ComponentVariableRegistry;
 import org.apache.nifi.util.CharacterFilterUtils;
 import org.apache.nifi.util.ReflectionUtils;
 import org.apache.nifi.util.file.classloader.ClassLoaderUtils;
+import org.apache.nifi.validation.FlowAnalysisContext;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -62,6 +63,7 @@ public abstract class AbstractFlowAnalysisRuleNode extends AbstractComponentNode
 
     private final AtomicReference<FlowAnalysisRuleDetails> flowAnalysisRuleRef;
     private final ControllerServiceLookup serviceLookup;
+    private final FlowAnalysisContext flowAnalysisContext;
 
     private volatile String comment;
     private FlowAnalysisRuleType ruleType;
@@ -70,17 +72,19 @@ public abstract class AbstractFlowAnalysisRuleNode extends AbstractComponentNode
 
     public AbstractFlowAnalysisRuleNode(final LoggableComponent<FlowAnalysisRule> flowAnalysisRule, final String id,
                                         final ControllerServiceProvider controllerServiceProvider,
-                                        final ValidationContextFactory validationContextFactory, final ComponentVariableRegistry variableRegistry,
+                                        final ValidationContextFactory validationContextFactory,
+                                        final FlowAnalysisContext flowAnalysisContext,
+                                        final ComponentVariableRegistry variableRegistry,
                                         final ReloadComponent reloadComponent, final ExtensionManager extensionManager, final ValidationTrigger validationTrigger) {
 
-        this(flowAnalysisRule, id, controllerServiceProvider, validationContextFactory,
+        this(flowAnalysisRule, id, controllerServiceProvider, validationContextFactory, flowAnalysisContext,
                 flowAnalysisRule.getComponent().getClass().getSimpleName(), flowAnalysisRule.getComponent().getClass().getCanonicalName(),
                 variableRegistry, reloadComponent, extensionManager, validationTrigger, false);
     }
 
 
     public AbstractFlowAnalysisRuleNode(final LoggableComponent<FlowAnalysisRule> flowAnalysisRule, final String id, final ControllerServiceProvider controllerServiceProvider,
-                                        final ValidationContextFactory validationContextFactory,
+                                        final ValidationContextFactory validationContextFactory, final FlowAnalysisContext flowAnalysisContext,
                                         final String componentType, final String componentCanonicalClass, final ComponentVariableRegistry variableRegistry,
                                         final ReloadComponent reloadComponent, final ExtensionManager extensionManager, final ValidationTrigger validationTrigger,
                                         final boolean isExtensionMissing) {
@@ -89,6 +93,7 @@ public abstract class AbstractFlowAnalysisRuleNode extends AbstractComponentNode
                 extensionManager, validationTrigger, isExtensionMissing);
         this.flowAnalysisRuleRef = new AtomicReference<>(new FlowAnalysisRuleDetails(flowAnalysisRule));
         this.serviceLookup = controllerServiceProvider;
+        this.flowAnalysisContext = flowAnalysisContext;
         this.ruleType = FlowAnalysisRuleType.RECOMMENDATION;
     }
 
@@ -252,6 +257,9 @@ public abstract class AbstractFlowAnalysisRuleNode extends AbstractComponentNode
     @Override
     public void disable() {
         setState(FlowAnalysisRuleState.DISABLED, OnDisabled.class);
+        flowAnalysisContext.getIdToRuleNameToRuleViolations().forEach((__, ruleNameToRuleViolation) -> {
+            ruleNameToRuleViolation.remove(getName());
+        });
     }
 
     private void setState(FlowAnalysisRuleState newState, Class<? extends Annotation> annotation) {

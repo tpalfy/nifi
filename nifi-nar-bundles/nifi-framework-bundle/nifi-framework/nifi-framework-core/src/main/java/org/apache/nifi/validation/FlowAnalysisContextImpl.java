@@ -44,9 +44,15 @@ public class FlowAnalysisContextImpl implements FlowAnalysisContext {
     }
 
     @Override
-    public void updateOneRuleViolation(String subjectId, String ruleName, boolean enabled) {
+    public void updateRuleViolation(String subjectId, String ruleName, boolean enabled) {
         Optional.ofNullable(idToRuleNameToRuleViolations.get(subjectId))
             .map(ruleNameToRuleViolations -> ruleNameToRuleViolations.get(ruleName))
             .ifPresent(ruleViolation -> ruleViolation.setEnabled(enabled));
+    }
+
+    @Override
+    public void removeRuleViolation(String subjectId, String ruleName) {
+        Optional.ofNullable(idToRuleNameToRuleViolations.get(subjectId))
+            .ifPresent(ruleNameToRuleViolations -> ruleNameToRuleViolations.remove(ruleName));
     }
 }

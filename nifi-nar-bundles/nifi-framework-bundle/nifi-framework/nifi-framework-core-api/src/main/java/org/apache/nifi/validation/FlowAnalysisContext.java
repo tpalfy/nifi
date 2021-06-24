@@ -23,5 +23,7 @@ public interface FlowAnalysisContext {
 
     ConcurrentMap<String, ConcurrentMap<String, RuleViolation>> getIdToRuleNameToRuleViolations();
 
-    void updateOneRuleViolation(String subjectId, String ruleName, boolean enabled);
+    void updateRuleViolation(String subjectId, String ruleName, boolean enabled);
+
+    void removeRuleViolation(String subjectId, String ruleName);
 }

@@ -25,7 +25,6 @@ public class FlowAnalysisResultDTO {
     private String ruleName;
     private String errorMessage;
 
-    private boolean available;
     private boolean enabled;
 
     public String getRuleType() {
@@ -58,14 +57,6 @@ public class FlowAnalysisResultDTO {
 
     public void setErrorMessage(String errorMessage) {
         this.errorMessage = errorMessage;
-    }
-
-    public boolean isAvailable() {
-        return available;
-    }
-
-    public void setAvailable(boolean available) {
-        this.available = available;
     }
 
     public boolean isEnabled() {

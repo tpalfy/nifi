@@ -22,13 +22,12 @@ import org.apache.nifi.flow.VersionedProcessor;
 import org.apache.nifi.flowanalysis.AbstractFlowAnalysisRule;
 import org.apache.nifi.flowanalysis.FlowAnalysisResult;
 import org.apache.nifi.flowanalysis.FlowAnalysisRuleContext;
-import org.apache.nifi.flowanalysis.FlowDetails;
 import org.apache.nifi.processor.util.StandardValidators;
 
 import java.util.ArrayList;
-import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
+import java.util.Optional;
 import java.util.function.Function;
 
 public class DisallowProcessorType extends AbstractFlowAnalysisRule {
@@ -55,17 +54,17 @@ public class DisallowProcessorType extends AbstractFlowAnalysisRule {
     }
 
     @Override
-    public Collection<FlowAnalysisResult> analyzeFlow(
+    public Optional<FlowAnalysisResult> analyzeComponent(
         String ruleName,
         FlowAnalysisRuleContext context,
-        FlowDetails flowDetails,
+        Object component,
         Function<String, VersionedControllerService> controllerServiceDetailsProvider
     ) {
-        Collection<FlowAnalysisResult> result = new ArrayList<>();
-
         String processorType = context.getProperty(PROCESSOR_TYPE).getValue();
 
-        for (VersionedProcessor processor : flowDetails.getProcessors()) {
+        if (component instanceof VersionedProcessor) {
+            VersionedProcessor processor = (VersionedProcessor) component;
+
             String encounteredProcessorType = processor.getType();
             encounteredProcessorType = encounteredProcessorType.substring(encounteredProcessorType.lastIndexOf(".") + 1);
 
@@ -76,10 +75,10 @@ public class DisallowProcessorType extends AbstractFlowAnalysisRule {
                     "'" + processorType + "' is not allowed!"
                 );
 
-                result.add(flowAnalysisResult);
+                return Optional.of(flowAnalysisResult);
             }
         }
 
-        return result;
+        return Optional.empty();
     }
 }

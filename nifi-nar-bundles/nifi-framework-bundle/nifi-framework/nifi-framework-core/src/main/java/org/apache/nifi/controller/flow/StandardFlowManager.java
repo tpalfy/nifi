@@ -549,6 +549,10 @@ public class StandardFlowManager extends AbstractFlowManager implements FlowMana
         this.flowAnalyzer = flowAnalyzer;
     }
 
+    public FlowAnalysisContext getFlowAnalysisContext() {
+        return flowAnalysisContext;
+    }
+
     public FlowAnalyzer getFlowAnalyzer() {
         return flowAnalyzer;
     }
