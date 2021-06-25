@@ -5769,7 +5769,7 @@ public class StandardNiFiServiceFacade implements NiFiServiceFacade {
 
     @Override
     public void updateRuleViolation(String subjectId, String scope, String ruleName, Boolean enabled) {
-        flowAnalysisContext.updateComponentRuleViolation(subjectId, scope, ruleName, enabled);
+        flowAnalysisContext.updateRuleViolation(subjectId, scope, ruleName, enabled);
         controllerFacade.save();
     }
 

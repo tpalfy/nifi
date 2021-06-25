@@ -24,7 +24,7 @@ public class FlowAnalysisContextImpl implements FlowAnalysisContext {
     private final ConcurrentMap<String, ConcurrentMap<String, ConcurrentMap<String, RuleViolation>>> idToScopeToRuleNameToRuleViolation = new ConcurrentHashMap<>();
 
     @Override
-    public void addComponentRuleViolation(RuleViolation ruleViolation) {
+    public void addRuleViolation(RuleViolation ruleViolation) {
         idToScopeToRuleNameToRuleViolation
             .computeIfAbsent(ruleViolation.getSubjectId(), __ -> new ConcurrentHashMap<>())
             .computeIfAbsent(ruleViolation.getScope(), __ -> new ConcurrentHashMap<>())
@@ -45,16 +45,16 @@ public class FlowAnalysisContextImpl implements FlowAnalysisContext {
     }
 
     @Override
-    public void updateComponentRuleViolation(String componentId, String scope, String ruleName, boolean enabled) {
-        Optional.ofNullable(idToScopeToRuleNameToRuleViolation.get(componentId))
+    public void updateRuleViolation(String subjectId, String scope, String ruleName, boolean enabled) {
+        Optional.ofNullable(idToScopeToRuleNameToRuleViolation.get(subjectId))
             .map(scopeToRuleNameToRuleViolation -> scopeToRuleNameToRuleViolation.get(scope))
             .map(ruleNameToRuleViolation -> ruleNameToRuleViolation.get(ruleName))
             .ifPresent(ruleViolation -> ruleViolation.setEnabled(enabled));
     }
 
     @Override
-    public void deleteComponentRuleViolation(String componentId, String scope, String ruleName) {
-        Optional.ofNullable(idToScopeToRuleNameToRuleViolation.get(componentId))
+    public void deleteRuleViolation(String subjectId, String scope, String ruleName) {
+        Optional.ofNullable(idToScopeToRuleNameToRuleViolation.get(subjectId))
             .map(scopeToRuleNameToRuleViolation -> scopeToRuleNameToRuleViolation.get(scope))
             .ifPresent(scopeToRuleNameToRuleViolation -> scopeToRuleNameToRuleViolation.remove(ruleName));
     }

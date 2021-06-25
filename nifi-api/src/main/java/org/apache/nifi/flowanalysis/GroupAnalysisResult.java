@@ -33,7 +33,7 @@ public class GroupAnalysisResult {
         this(Optional.of(component), messages);
     }
 
-    public GroupAnalysisResult(Optional<VersionedComponent> component, String messages) {
+    private GroupAnalysisResult(Optional<VersionedComponent> component, String messages) {
         this.component = component;
         this.message = messages;
     }

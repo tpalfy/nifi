@@ -155,7 +155,7 @@ public class MainFlowAnalyzer implements FlowAnalyzer {
 
                     analysisResults.forEach(analysisResult -> {
                         analysisResult.getComponent().ifPresent(component -> {
-                            flowAnalysisContext.addComponentRuleViolation(
+                            flowAnalysisContext.addRuleViolation(
                                 new RuleViolation(
                                     flowAnalysisRuleNode.getRuleType(),
                                     component.getIdentifier(),
@@ -166,7 +166,7 @@ public class MainFlowAnalyzer implements FlowAnalyzer {
 
                         if (!analysisResult.getComponent().isPresent()) {
                             String uuid = "group_" + UUID.randomUUID().toString();
-                            flowAnalysisContext.addComponentRuleViolation(
+                            flowAnalysisContext.addRuleViolation(
                                 new RuleViolation(
                                     flowAnalysisRuleNode.getRuleType(),
                                     uuid,
@@ -202,7 +202,7 @@ public class MainFlowAnalyzer implements FlowAnalyzer {
                     Optional<ComponentAnalysisResult> analysisResultOptional = ruleRunner.apply(flowAnalysisRuleNode);
 
                     analysisResultOptional.ifPresent(analysisResult -> {
-                        flowAnalysisContext.addComponentRuleViolation(
+                        flowAnalysisContext.addRuleViolation(
                             new RuleViolation(
                                 flowAnalysisRuleNode.getRuleType(),
                                 componentId,
@@ -212,7 +212,7 @@ public class MainFlowAnalyzer implements FlowAnalyzer {
                     });
 
                     if (!analysisResultOptional.isPresent()) {
-                        flowAnalysisContext.deleteComponentRuleViolation(componentId, componentId, ruleName);
+                        flowAnalysisContext.deleteRuleViolation(componentId, componentId, ruleName);
                     }
                 } catch (Exception e) {
                     logger.error("FlowAnalysis error while running '{}' against '{}'", ruleName, component, e);
