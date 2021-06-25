@@ -506,15 +506,15 @@ public class ControllerResource extends ApplicationResource {
 
     private FlowAnalysisResultEntity createFlowAnalysisResultEntity() {
         Set<FlowAnalysisResultDTO> analysisResult = serviceFacade.getRuleViolations()
-            .values()
-            .stream()
-            .map(Map::values)
-            .flatMap(Collection::stream)
+            .values().stream()
+            .map(Map::values).flatMap(Collection::stream)
+            .map(Map::values).flatMap(Collection::stream)
             .map(ruleViolation -> {
                 FlowAnalysisResultDTO resultDTO = new FlowAnalysisResultDTO();
 
                 resultDTO.setRuleType(ruleViolation.getRuleType().toString());
                 resultDTO.setSubjectId(ruleViolation.getSubjectId());
+                resultDTO.setScope(ruleViolation.getScope());
                 resultDTO.setRuleName(ruleViolation.getRuleName());
                 resultDTO.setErrorMessage(ruleViolation.getErrorMessage());
                 resultDTO.setEnabled(ruleViolation.isEnabled());
@@ -563,7 +563,7 @@ public class ControllerResource extends ApplicationResource {
             controller.authorize(authorizer, RequestAction.READ, NiFiUserUtils.getNiFiUser());
         });
 
-        serviceFacade.updateRuleViolation(ruleViolationEntity.getSubjectId(), ruleViolationEntity.getRuleName(), ruleViolationEntity.getEnabled());
+        serviceFacade.updateRuleViolation(ruleViolationEntity.getSubjectId(), ruleViolationEntity.getSubjectId(), ruleViolationEntity.getRuleName(), ruleViolationEntity.getEnabled());
 
         ActionDTO actionDTO = new ActionDTO();
         actionDTO.setOperation("update-rule-violation");

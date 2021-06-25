@@ -17,16 +17,20 @@
 package org.apache.nifi.flowanalysis;
 
 import org.apache.nifi.components.AbstractConfigurableComponent;
+import org.apache.nifi.logging.ComponentLog;
 import org.apache.nifi.reporting.InitializationException;
 
 public abstract class AbstractFlowAnalysisRule extends AbstractConfigurableComponent implements FlowAnalysisRule {
     private String identifier;
     private String description;
 
+    private ComponentLog logger;
+
     @Override
     public void initialize(FlowAnalysisRuleInitializationContext config) throws InitializationException {
         identifier = config.getIdentifier();
         description = getClass().getSimpleName() + "[id=" + identifier + "]";
+        logger = config.getLogger();
     }
 
     @Override
@@ -37,5 +41,9 @@ public abstract class AbstractFlowAnalysisRule extends AbstractConfigurableCompo
     @Override
     public String toString() {
         return description;
+    }
+
+    protected ComponentLog getLogger() {
+        return logger;
     }
 }

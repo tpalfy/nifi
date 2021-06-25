@@ -257,9 +257,11 @@ public abstract class AbstractFlowAnalysisRuleNode extends AbstractComponentNode
     @Override
     public void disable() {
         setState(FlowAnalysisRuleState.DISABLED, OnDisabled.class);
-        flowAnalysisContext.getIdToRuleNameToRuleViolations().forEach((__, ruleNameToRuleViolation) -> {
-            ruleNameToRuleViolation.remove(getName());
-        });
+        flowAnalysisContext.getRuleViolations()
+            .values().stream()
+            .forEach(scopeToRuleNameToRuleViolation -> scopeToRuleNameToRuleViolation.forEach((__, ruleNameToRuleViolation) -> {
+                ruleNameToRuleViolation.remove(getName());
+            }));
     }
 
     private void setState(FlowAnalysisRuleState newState, Class<? extends Annotation> annotation) {

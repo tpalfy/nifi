@@ -5768,16 +5768,16 @@ public class StandardNiFiServiceFacade implements NiFiServiceFacade {
     }
 
     @Override
-    public void updateRuleViolation(String subjectId, String ruleName, Boolean enabled) {
-        flowAnalysisContext.updateRuleViolation(subjectId, ruleName, enabled);
+    public void updateRuleViolation(String subjectId, String scope, String ruleName, Boolean enabled) {
+        flowAnalysisContext.updateComponentRuleViolation(subjectId, scope, ruleName, enabled);
         controllerFacade.save();
     }
 
     @Override
-    public ConcurrentMap<String, ConcurrentMap<String, RuleViolation>> getRuleViolations() {
-        ConcurrentMap<String, ConcurrentMap<String, RuleViolation>> idToRuleNameToRuleViolations = flowAnalysisContext.getIdToRuleNameToRuleViolations();
+    public ConcurrentMap<String, ConcurrentMap<String, ConcurrentMap<String, RuleViolation>>> getRuleViolations() {
+        ConcurrentMap<String, ConcurrentMap<String, ConcurrentMap<String, RuleViolation>>> ruleViolations = flowAnalysisContext.getRuleViolations();
 
-        return idToRuleNameToRuleViolations;
+        return ruleViolations;
     }
 
     /* reusable function declarations for converting ids to tenant entities */

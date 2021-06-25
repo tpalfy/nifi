@@ -23,14 +23,16 @@ import java.util.StringJoiner;
 public class RuleViolation {
     private final FlowAnalysisRuleType ruleType;
     private final String subjectId;
+    private final String scope;
     private final String ruleName;
     private final String errorMessage;
 
     private boolean enabled;
 
-    public RuleViolation(FlowAnalysisRuleType ruleType, String subjectId, String ruleName, String errorMessage) {
+    public RuleViolation(FlowAnalysisRuleType ruleType, String subjectId, String scope, String ruleName, String errorMessage) {
         this.ruleType = ruleType;
         this.subjectId = subjectId;
+        this.scope = scope;
         this.ruleName = ruleName;
         this.errorMessage = errorMessage;
         this.enabled = true;
@@ -44,6 +46,10 @@ public class RuleViolation {
         return subjectId;
     }
 
+    public String getScope() {
+        return scope;
+    }
+
     public String getRuleName() {
         return ruleName;
     }
@@ -51,7 +57,6 @@ public class RuleViolation {
     public String getErrorMessage() {
         return errorMessage;
     }
-
 
     public boolean isEnabled() {
         return enabled;
@@ -66,6 +71,7 @@ public class RuleViolation {
         return new StringJoiner(", ", RuleViolation.class.getSimpleName() + "[", "]")
             .add("ruleType=" + ruleType)
             .add("subjectId='" + subjectId + "'")
+            .add("scope='" + scope + "'")
             .add("ruleName='" + ruleName + "'")
             .add("errorMessage='" + errorMessage + "'")
             .add("enabled=" + enabled)

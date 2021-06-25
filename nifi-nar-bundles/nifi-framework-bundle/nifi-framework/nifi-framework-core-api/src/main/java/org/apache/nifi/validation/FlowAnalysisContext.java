@@ -19,11 +19,11 @@ package org.apache.nifi.validation;
 import java.util.concurrent.ConcurrentMap;
 
 public interface FlowAnalysisContext {
-    void addRuleViolation(String subjectId, RuleViolation ruleViolation);
+    void addComponentRuleViolation(RuleViolation ruleViolation);
 
-    ConcurrentMap<String, ConcurrentMap<String, RuleViolation>> getIdToRuleNameToRuleViolations();
+    void updateComponentRuleViolation(String componentId, String scope, String ruleName, boolean enabled);
 
-    void updateRuleViolation(String subjectId, String ruleName, boolean enabled);
+    void deleteComponentRuleViolation(String componentId, String scope, String ruleName);
 
-    void removeRuleViolation(String subjectId, String ruleName);
+    ConcurrentMap<String, ConcurrentMap<String, ConcurrentMap<String, RuleViolation>>> getRuleViolations();
 }

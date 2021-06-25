@@ -21,14 +21,20 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 
 public class FlowAnalysisContextImpl implements FlowAnalysisContext {
-    private final ConcurrentMap<String, ConcurrentMap<String, RuleViolation>> idToRuleNameToRuleViolations = new ConcurrentHashMap<>();
+    private final ConcurrentMap<String, ConcurrentMap<String, ConcurrentMap<String, RuleViolation>>> idToScopeToRuleNameToRuleViolation = new ConcurrentHashMap<>();
 
     @Override
-    public void addRuleViolation(String subjectId, RuleViolation ruleViolation) {
-        idToRuleNameToRuleViolations
-            .computeIfAbsent(subjectId, __ -> new ConcurrentHashMap<>())
+    public void addComponentRuleViolation(RuleViolation ruleViolation) {
+        idToScopeToRuleNameToRuleViolation
+            .computeIfAbsent(ruleViolation.getSubjectId(), __ -> new ConcurrentHashMap<>())
+            .computeIfAbsent(ruleViolation.getScope(), __ -> new ConcurrentHashMap<>())
             .compute(ruleViolation.getRuleName(), (ruleName, currentRuleViolation) -> {
-                RuleViolation newRuleViolation = new RuleViolation(ruleViolation.getRuleType(), subjectId, ruleName, ruleViolation.getErrorMessage());
+                RuleViolation newRuleViolation = new RuleViolation(
+                    ruleViolation.getRuleType(),
+                    ruleViolation.getSubjectId(),
+                    ruleViolation.getScope(),
+                    ruleName,
+                    ruleViolation.getErrorMessage());
 
                 if (currentRuleViolation != null) {
                     newRuleViolation.setEnabled(currentRuleViolation.isEnabled());
@@ -39,20 +45,22 @@ public class FlowAnalysisContextImpl implements FlowAnalysisContext {
     }
 
     @Override
-    public ConcurrentMap<String, ConcurrentMap<String, RuleViolation>> getIdToRuleNameToRuleViolations() {
-        return idToRuleNameToRuleViolations;
-    }
-
-    @Override
-    public void updateRuleViolation(String subjectId, String ruleName, boolean enabled) {
-        Optional.ofNullable(idToRuleNameToRuleViolations.get(subjectId))
-            .map(ruleNameToRuleViolations -> ruleNameToRuleViolations.get(ruleName))
+    public void updateComponentRuleViolation(String componentId, String scope, String ruleName, boolean enabled) {
+        Optional.ofNullable(idToScopeToRuleNameToRuleViolation.get(componentId))
+            .map(scopeToRuleNameToRuleViolation -> scopeToRuleNameToRuleViolation.get(scope))
+            .map(ruleNameToRuleViolation -> ruleNameToRuleViolation.get(ruleName))
             .ifPresent(ruleViolation -> ruleViolation.setEnabled(enabled));
     }
 
     @Override
-    public void removeRuleViolation(String subjectId, String ruleName) {
-        Optional.ofNullable(idToRuleNameToRuleViolations.get(subjectId))
-            .ifPresent(ruleNameToRuleViolations -> ruleNameToRuleViolations.remove(ruleName));
+    public void deleteComponentRuleViolation(String componentId, String scope, String ruleName) {
+        Optional.ofNullable(idToScopeToRuleNameToRuleViolation.get(componentId))
+            .map(scopeToRuleNameToRuleViolation -> scopeToRuleNameToRuleViolation.get(scope))
+            .ifPresent(scopeToRuleNameToRuleViolation -> scopeToRuleNameToRuleViolation.remove(ruleName));
+    }
+
+    @Override
+    public ConcurrentMap<String, ConcurrentMap<String, ConcurrentMap<String, RuleViolation>>> getRuleViolations() {
+        return idToScopeToRuleNameToRuleViolation;
     }
 }

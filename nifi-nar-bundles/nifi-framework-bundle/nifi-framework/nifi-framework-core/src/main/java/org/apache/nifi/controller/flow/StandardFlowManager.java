@@ -589,6 +589,8 @@ public class StandardFlowManager extends AbstractFlowManager implements FlowMana
             .kerberosConfig(flowController.createKerberosConfig(nifiProperties))
             .flowController(flowController)
             .extensionManager(extensionManager)
+            .flowAnalysisContext(flowAnalysisContext)
+            .flowAnalyzer(flowAnalyzer)
             .buildFlowAnalysisRuleNode();
 
         LogRepositoryFactory.getRepository(flowAnalysisNode.getIdentifier()).setLogger(flowAnalysisNode.getLogger());

@@ -26,6 +26,7 @@ public class FlowAnalysisResultDTO {
     private String errorMessage;
 
     private boolean enabled;
+    private String scope;
 
     public String getRuleType() {
         return ruleType;
@@ -41,6 +42,14 @@ public class FlowAnalysisResultDTO {
 
     public void setSubjectId(String subjectId) {
         this.subjectId = subjectId;
+    }
+
+    public String getScope() {
+        return scope;
+    }
+
+    public void setScope(String scope) {
+        this.scope = scope;
     }
 
     public String getRuleName() {

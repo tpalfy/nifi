@@ -21,6 +21,7 @@ import javax.xml.bind.annotation.XmlRootElement;
 @XmlRootElement(name = "ruleViolationEntity")
 public class RuleViolationEntity extends Entity {
     private String subjectId;
+    private String scope;
     private String ruleName;
     private Boolean enabled;
 
@@ -30,6 +31,14 @@ public class RuleViolationEntity extends Entity {
 
     public void setSubjectId(String subjectId) {
         this.subjectId = subjectId;
+    }
+
+    public String getScope() {
+        return scope;
+    }
+
+    public void setScope(String scope) {
+        this.scope = scope;
     }
 
     public String getRuleName() {

@@ -2437,7 +2437,7 @@ public interface NiFiServiceFacade {
 
     void analyzeFlow(String processGroupId);
 
-    ConcurrentMap<String, ConcurrentMap<String, RuleViolation>> getRuleViolations();
+    ConcurrentMap<String, ConcurrentMap<String, ConcurrentMap<String, RuleViolation>>> getRuleViolations();
 
-    void updateRuleViolation(String subjectId, String ruleName, Boolean enabled);
+    void updateRuleViolation(String subjectId, String scope, String ruleName, Boolean enabled);
 }

@@ -262,6 +262,7 @@ public class VolatileBulletinRepository implements BulletinRepository {
             case FLOW_CONTROLLER:
             case CONTROLLER_SERVICE:
             case REPORTING_TASK:
+            case FLOW_ANALYSIS_RULE:
                 return true;
             default:
                 return false;
