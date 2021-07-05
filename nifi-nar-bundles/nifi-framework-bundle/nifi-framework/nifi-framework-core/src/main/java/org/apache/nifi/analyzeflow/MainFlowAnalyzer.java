@@ -137,8 +137,10 @@ public class MainFlowAnalyzer implements FlowAnalyzer {
         );
 
         flowAnalysisContext.getRuleViolations()
-            .values()
-            .forEach(scopeToRuleToRuleViolations -> scopeToRuleToRuleViolations.remove(groupId));
+            .values().stream()
+            .map(scopeToRuleNameToRuleViolation -> scopeToRuleNameToRuleViolation.get(groupId))
+            .map(Map::values).flatMap(Collection::stream)
+            .forEach(ruleViolation -> ruleViolation.setAvailable(false));
 
         flowAnalysisRules.stream()
             .filter(FlowAnalysisRuleNode::isEnabled)
@@ -179,6 +181,12 @@ public class MainFlowAnalyzer implements FlowAnalyzer {
                     logger.error("FlowAnalysis error while running '{}' against group '{}'", ruleName, groupId, e);
                 }
             });
+
+        flowAnalysisContext.getRuleViolations()
+            .values().stream()
+            .map(scopeToRuleNameToRuleViolation -> scopeToRuleNameToRuleViolation.get(groupId))
+            .map(Map::entrySet)
+            .forEach(ruleNameToRuleViolationEntrySet -> ruleNameToRuleViolationEntrySet.removeIf(ruleNameAndRuleViolation -> !ruleNameAndRuleViolation.getValue().isAvailable()));
 
         Instant end = Instant.now();
 

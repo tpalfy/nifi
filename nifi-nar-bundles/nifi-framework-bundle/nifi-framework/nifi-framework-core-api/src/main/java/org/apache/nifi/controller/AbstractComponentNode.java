@@ -627,6 +627,7 @@ public abstract class AbstractComponentNode implements ComponentNode {
                 .ifPresent(ruleViolationStream -> ruleViolationStream
                     .filter(ruleViolation -> ruleViolation.getRuleType() == FlowAnalysisRuleType.POLICY)
                     .filter(RuleViolation::isEnabled)
+                    .filter(RuleViolation::isAvailable)
                     .forEach(ruleViolation -> validationResults.add(
                         new ValidationResult.Builder()
                             .subject(getComponent().getClass().getSimpleName())
