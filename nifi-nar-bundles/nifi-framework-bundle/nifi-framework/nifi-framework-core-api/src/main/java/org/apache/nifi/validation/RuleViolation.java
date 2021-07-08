@@ -16,6 +16,8 @@
  */
 package org.apache.nifi.validation;
 
+import org.apache.commons.lang3.builder.EqualsBuilder;
+import org.apache.commons.lang3.builder.HashCodeBuilder;
 import org.apache.nifi.flowanalysis.FlowAnalysisRuleType;
 
 import java.util.StringJoiner;
@@ -24,18 +26,18 @@ public class RuleViolation {
     private final FlowAnalysisRuleType ruleType;
     private final String subjectId;
     private final String scope;
-    private final String ruleName;
+    private final String ruleId;
     private final String errorMessage;
 
     private boolean enabled;
 
     private boolean available;
 
-    public RuleViolation(FlowAnalysisRuleType ruleType, String subjectId, String scope, String ruleName, String errorMessage) {
+    public RuleViolation(FlowAnalysisRuleType ruleType, String subjectId, String scope, String ruleId, String errorMessage) {
         this.ruleType = ruleType;
         this.subjectId = subjectId;
         this.scope = scope;
-        this.ruleName = ruleName;
+        this.ruleId = ruleId;
         this.errorMessage = errorMessage;
         this.enabled = true;
         this.available = true;
@@ -53,8 +55,8 @@ public class RuleViolation {
         return scope;
     }
 
-    public String getRuleName() {
-        return ruleName;
+    public String getRuleId() {
+        return ruleId;
     }
 
     public String getErrorMessage() {
@@ -83,10 +85,42 @@ public class RuleViolation {
             .add("ruleType=" + ruleType)
             .add("subjectId='" + subjectId + "'")
             .add("scope='" + scope + "'")
-            .add("ruleName='" + ruleName + "'")
+            .add("ruleId='" + ruleId + "'")
             .add("errorMessage='" + errorMessage + "'")
             .add("enabled=" + enabled)
             .add("available=" + available)
             .toString();
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+
+        if (o == null || getClass() != o.getClass()) return false;
+
+        RuleViolation that = (RuleViolation) o;
+
+        return new EqualsBuilder()
+            .append(enabled, that.enabled)
+            .append(available, that.available)
+            .append(ruleType, that.ruleType)
+            .append(subjectId, that.subjectId)
+            .append(scope, that.scope)
+            .append(ruleId, that.ruleId)
+            .append(errorMessage, that.errorMessage)
+            .isEquals();
+    }
+
+    @Override
+    public int hashCode() {
+        return new HashCodeBuilder(17, 37)
+            .append(ruleType)
+            .append(subjectId)
+            .append(scope)
+            .append(ruleId)
+            .append(errorMessage)
+            .append(enabled)
+            .append(available)
+            .toHashCode();
     }
 }

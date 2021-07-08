@@ -515,7 +515,7 @@ public class ControllerResource extends ApplicationResource {
                 resultDTO.setRuleType(ruleViolation.getRuleType().toString());
                 resultDTO.setSubjectId(ruleViolation.getSubjectId());
                 resultDTO.setScope(ruleViolation.getScope());
-                resultDTO.setRuleName(ruleViolation.getRuleName());
+                resultDTO.setRuleName(ruleViolation.getRuleId());
                 resultDTO.setErrorMessage(ruleViolation.getErrorMessage());
                 resultDTO.setEnabled(ruleViolation.isEnabled());
 
@@ -563,7 +563,7 @@ public class ControllerResource extends ApplicationResource {
             controller.authorize(authorizer, RequestAction.READ, NiFiUserUtils.getNiFiUser());
         });
 
-        serviceFacade.updateRuleViolation(ruleViolationEntity.getSubjectId(), ruleViolationEntity.getScope(), ruleViolationEntity.getRuleName(), ruleViolationEntity.getEnabled());
+        serviceFacade.updateRuleViolation(ruleViolationEntity.getSubjectId(), ruleViolationEntity.getScope(), ruleViolationEntity.getRuleId(), ruleViolationEntity.getEnabled());
 
         ActionDTO actionDTO = new ActionDTO();
         actionDTO.setOperation("update-rule-violation");

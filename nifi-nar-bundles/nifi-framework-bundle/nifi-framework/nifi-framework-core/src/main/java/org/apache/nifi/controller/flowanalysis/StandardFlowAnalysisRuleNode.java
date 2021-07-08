@@ -40,19 +40,19 @@ public class StandardFlowAnalysisRuleNode extends AbstractFlowAnalysisRuleNode i
 
     private final FlowController flowController;
 
-    public StandardFlowAnalysisRuleNode(final LoggableComponent<FlowAnalysisRule> reportingTask, final String id, final FlowController controller,
+    public StandardFlowAnalysisRuleNode(final LoggableComponent<FlowAnalysisRule> flowAnalysisRule, final String id, final FlowController controller,
                                         final ValidationContextFactory validationContextFactory, final FlowAnalysisContext flowAnalysisContext,
                                         final ComponentVariableRegistry variableRegistry, final ReloadComponent reloadComponent, final ExtensionManager extensionManager,
                                         final ValidationTrigger validationTrigger) {
-        super(reportingTask, id, controller.getControllerServiceProvider(), validationContextFactory, flowAnalysisContext, variableRegistry, reloadComponent, extensionManager, validationTrigger);
+        super(flowAnalysisRule, id, controller.getControllerServiceProvider(), validationContextFactory, flowAnalysisContext, variableRegistry, reloadComponent, extensionManager, validationTrigger);
         this.flowController = controller;
     }
 
-    public StandardFlowAnalysisRuleNode(final LoggableComponent<FlowAnalysisRule> reportingTask, final String id, final FlowController controller,
+    public StandardFlowAnalysisRuleNode(final LoggableComponent<FlowAnalysisRule> flowAnalysisRule, final String id, final FlowController controller,
                                         final ValidationContextFactory validationContextFactory, final FlowAnalysisContext flowAnalysisContext,
                                         final String componentType, final String canonicalClassName, final ComponentVariableRegistry variableRegistry,
                                         final ReloadComponent reloadComponent, final ExtensionManager extensionManager, final ValidationTrigger validationTrigger, final boolean isExtensionMissing) {
-        super(reportingTask, id, controller.getControllerServiceProvider(), validationContextFactory, flowAnalysisContext, componentType, canonicalClassName,
+        super(flowAnalysisRule, id, controller.getControllerServiceProvider(), validationContextFactory, flowAnalysisContext, componentType, canonicalClassName,
             variableRegistry, reloadComponent, extensionManager, validationTrigger, isExtensionMissing);
         this.flowController = controller;
     }

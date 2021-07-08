@@ -22,7 +22,7 @@ import javax.xml.bind.annotation.XmlRootElement;
 public class RuleViolationEntity extends Entity {
     private String subjectId;
     private String scope;
-    private String ruleName;
+    private String ruleId;
     private Boolean enabled;
 
     public String getSubjectId() {
@@ -41,12 +41,12 @@ public class RuleViolationEntity extends Entity {
         this.scope = scope;
     }
 
-    public String getRuleName() {
-        return ruleName;
+    public String getRuleId() {
+        return ruleId;
     }
 
-    public void setRuleName(String ruleName) {
-        this.ruleName = ruleName;
+    public void setRuleId(String ruleId) {
+        this.ruleId = ruleId;
     }
 
     public Boolean getEnabled() {

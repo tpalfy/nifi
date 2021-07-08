@@ -21,8 +21,8 @@ import java.util.StringJoiner;
 public class ComponentAnalysisResult {
     private final String message;
 
-    public ComponentAnalysisResult(String messages) {
-        this.message = messages;
+    public ComponentAnalysisResult(String message) {
+        this.message = message;
     }
 
     public String getMessage() {

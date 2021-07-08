@@ -5768,8 +5768,8 @@ public class StandardNiFiServiceFacade implements NiFiServiceFacade {
     }
 
     @Override
-    public void updateRuleViolation(String subjectId, String scope, String ruleName, Boolean enabled) {
-        flowAnalysisContext.updateRuleViolation(subjectId, scope, ruleName, enabled);
+    public void updateRuleViolation(String subjectId, String scope, String ruleId, Boolean enabled) {
+        flowAnalysisContext.updateRuleViolation(subjectId, scope, ruleId, enabled);
         controllerFacade.save();
     }
 

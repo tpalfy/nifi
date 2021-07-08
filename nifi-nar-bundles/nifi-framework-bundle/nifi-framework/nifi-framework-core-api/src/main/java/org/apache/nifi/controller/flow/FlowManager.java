@@ -340,6 +340,7 @@ public interface FlowManager {
      * Controller Services
      * Templates
      * Reporting Tasks
+     * Flow Analysis Rules
      * Parameter Contexts
      * Flow Registries
      *

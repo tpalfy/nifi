@@ -26,4 +26,6 @@ public interface FlowAnalysisContext {
     void deleteRuleViolation(String subjectId, String scope, String ruleName);
 
     ConcurrentMap<String, ConcurrentMap<String, ConcurrentMap<String, RuleViolation>>> getRuleViolations();
+
+    void cleanUp();
 }
