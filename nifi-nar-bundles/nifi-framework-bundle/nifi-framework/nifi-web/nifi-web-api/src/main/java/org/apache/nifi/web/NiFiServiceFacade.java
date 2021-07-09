@@ -32,6 +32,7 @@ import org.apache.nifi.registry.flow.VersionedFlow;
 import org.apache.nifi.registry.flow.VersionedFlowSnapshot;
 import org.apache.nifi.registry.flow.VersionedParameterContext;
 import org.apache.nifi.flow.VersionedProcessGroup;
+import org.apache.nifi.validation.FlowAnalysisContext;
 import org.apache.nifi.validation.RuleViolation;
 import org.apache.nifi.web.api.dto.AccessPolicyDTO;
 import org.apache.nifi.web.api.dto.AffectedComponentDTO;
@@ -2409,35 +2410,131 @@ public interface NiFiServiceFacade {
      */
     ConfigurableComponent getTempComponent(String classType, BundleCoordinate bundleCoordinate);
 
+    // ----------------------------------------
+    // Flow Analysis Rule methods
+    // ----------------------------------------
+
+    /**
+     * Gets all flow analysis rules.
+     *
+     * @return flow analysis rules
+     */
     Set<FlowAnalysisRuleEntity> getFlowAnalysisRules();
 
+    /**
+     * Returns the list of flow analysis rule types.
+     *
+     * @param bundleGroupFilter if specified, must be member of bundle group
+     * @param bundleArtifactFilter if specified, must be member of bundle artifact
+     * @param typeFilter if specified, type must match
+     * @return The list of available flow analysis rule types matching specified criteria
+     */
     Set<DocumentedTypeDTO> getFlowAnalysisRuleTypes(String bundleGroupFilter, String bundleArtifactFilter, String typeFilter);
 
-    void verifyCreateFlowAnalysisRule(FlowAnalysisRuleDTO requestFlowAnalysisRule);
+    /**
+     * Verifies the specified flow analysis rule can be created.
+     *
+     * @param flowAnalysisRuleDTO flow analysis rule
+     */
+    void verifyCreateFlowAnalysisRule(FlowAnalysisRuleDTO flowAnalysisRuleDTO);
 
-    void verifyUpdateFlowAnalysisRule(FlowAnalysisRuleDTO reportingTaskDTO);
+    /**
+     * Verifies the specified flow analysis rule can be updated.
+     *
+     * @param flowAnalysisRuleDTO flow analysis rule
+     */
+    void verifyUpdateFlowAnalysisRule(FlowAnalysisRuleDTO flowAnalysisRuleDTO);
 
+    /**
+     * Verifies the specified flow analysis rule can be removed.
+     *
+     * @param flowAnalysisRuleId id of flow analysis rule
+     */
     void verifyDeleteFlowAnalysisRule(final String flowAnalysisRuleId);
 
-    void verifyCanClearFlowAnalysisRuleState(String id);
+    /**
+     * Verifies the state of a flow analysis rule can be cleared.
+     *
+     * @param flowAnalysisRuleId the flow analysis rule id
+     */
+    void verifyCanClearFlowAnalysisRuleState(String flowAnalysisRuleId);
 
-    FlowAnalysisRuleEntity createFlowAnalysisRule(Revision revision, FlowAnalysisRuleDTO flowAnalysisRule);
+    /**
+     * Creates a flow analysis rule.
+     *
+     * @param revision revision
+     * @param flowAnalysisRuleDTO The flow analysis rule (as DTO)
+     * @return The created flow analysis rule (wrapped in an Entity)
+     */
+    FlowAnalysisRuleEntity createFlowAnalysisRule(Revision revision, FlowAnalysisRuleDTO flowAnalysisRuleDTO);
 
-    FlowAnalysisRuleEntity getFlowAnalysisRule(String id);
+    /**
+     * Gets the flow analysis rule with the specified id.
+     *
+     * @param flowAnalysisRuleId id of the flow analysis rule
+     * @return the flow analysis rule
+     */
+    FlowAnalysisRuleEntity getFlowAnalysisRule(String flowAnalysisRuleId);
 
-    PropertyDescriptorDTO getFlowAnalysisRulePropertyDescriptor(String id, String propertyName);
+    /**
+     * Get the descriptor for the specified property of the flow analysis rule with the specified id.
+     *
+     * @param flowAnalysisRuleId id of the flow analysis rule
+     * @param propertyName property name
+     * @return descriptor
+     */
+    PropertyDescriptorDTO getFlowAnalysisRulePropertyDescriptor(String flowAnalysisRuleId, String propertyName);
 
-    ComponentStateDTO getFlowAnalysisRuleState(String id);
+    /**
+     * Gets the state for the flow analysis rule with the specified id.
+     *
+     * @param flowAnalysisRuleId the flow analysis rule id
+     * @return  the component state
+     */
+    ComponentStateDTO getFlowAnalysisRuleState(String flowAnalysisRuleId);
 
-    void clearFlowAnalysisRuleState(String id);
+    /**
+     * Clears the state for the flow analysis rule with the specified id.
+     *
+     * @param flowAnalysisRuleId the flow analysis rule id
+     */
+    void clearFlowAnalysisRuleState(String flowAnalysisRuleId);
 
+    /**
+     * Updates the specified flow analysis rule.
+     *
+     * @param revision Revision to compare with current base revision
+     * @param flowAnalysisRuleDTO The flow analysis rule (as DTO)
+     * @return The updated flow analysis rule (wrapped in an Entity)
+     */
     FlowAnalysisRuleEntity updateFlowAnalysisRule(Revision revision, FlowAnalysisRuleDTO flowAnalysisRuleDTO);
 
-    FlowAnalysisRuleEntity deleteFlowAnalysisRule(Revision revision, String id);
+    /**
+     * Deletes the flow analysis rule with the specified id.
+     *
+     * @param revision Revision to compare with current base revision
+     * @param flowAnalysisRuleId The flow analysis rule id
+     * @return snapshot of the deleted flow analysis rule (wrapped in an Entity)
+     */
+    FlowAnalysisRuleEntity deleteFlowAnalysisRule(Revision revision, String flowAnalysisRuleId);
 
+    /**
+     * Analyzes (a part of) the flow, represented by a process group
+     * @param processGroupId the id of the process group representing (a part of) the flow that should be analyzed
+     */
     void analyzeFlow(String processGroupId);
 
+    /**
+     * @return a multidimensional map of the current rule violations (see {@link FlowAnalysisContext#getRuleViolations()})
+     */
     ConcurrentMap<String, ConcurrentMap<String, ConcurrentMap<String, RuleViolation>>> getRuleViolations();
 
-    void updateRuleViolation(String subjectId, String scope, String ruleName, Boolean enabled);
+    /**
+     * Update an existing violation
+     * @param subjectId see {@link RuleViolation#getSubjectId()}
+     * @param scope see {@link RuleViolation#getScope()}
+     * @param ruleId see {@link RuleViolation#getRuleId()}
+     * @param enabled see {@link RuleViolation#isEnabled()}
+     */
+    void updateRuleViolation(String subjectId, String scope, String ruleId, Boolean enabled);
 }

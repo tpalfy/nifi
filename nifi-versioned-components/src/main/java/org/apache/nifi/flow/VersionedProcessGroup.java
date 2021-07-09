@@ -45,9 +45,6 @@ public class VersionedProcessGroup extends VersionedComponent {
     private String flowfileConcurrency;
     private String flowfileOutboundPolicy;
 
-    public VersionedProcessGroup() {
-    }
-
     @ApiModelProperty("The child Process Groups")
     public Set<VersionedProcessGroup> getProcessGroups() {
         return processGroups;

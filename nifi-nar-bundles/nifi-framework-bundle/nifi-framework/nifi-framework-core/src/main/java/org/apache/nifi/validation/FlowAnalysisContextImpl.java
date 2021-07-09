@@ -16,11 +16,9 @@
  */
 package org.apache.nifi.validation;
 
-import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
-import java.util.function.Predicate;
 
 public class FlowAnalysisContextImpl implements FlowAnalysisContext {
     private final ConcurrentMap<String, ConcurrentMap<String, ConcurrentMap<String, RuleViolation>>> idToScopeToRuleIdToRuleViolation = new ConcurrentHashMap<>();
@@ -36,7 +34,7 @@ public class FlowAnalysisContextImpl implements FlowAnalysisContext {
                     ruleViolation.getSubjectId(),
                     ruleViolation.getScope(),
                     ruleId,
-                    ruleViolation.getErrorMessage());
+                    ruleViolation.getViolationMessage());
 
                 if (currentRuleViolation != null) {
                     newRuleViolation.setEnabled(currentRuleViolation.isEnabled());

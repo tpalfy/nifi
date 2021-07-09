@@ -16,6 +16,7 @@
  */
 package org.apache.nifi.analyzeflow.ruleimpl;
 
+import org.apache.nifi.annotation.documentation.CapabilityDescription;
 import org.apache.nifi.components.PropertyDescriptor;
 import org.apache.nifi.flow.VersionedControllerService;
 import org.apache.nifi.flow.VersionedProcessor;
@@ -30,11 +31,12 @@ import java.util.List;
 import java.util.Optional;
 import java.util.function.Function;
 
+@CapabilityDescription("Produces a rule violation if encounters a processor of a given type.")
 public class DisallowProcessorType extends AbstractFlowAnalysisRule {
     public static final PropertyDescriptor PROCESSOR_TYPE = new PropertyDescriptor.Builder()
         .name("processor-type")
         .displayName("Processor Type")
-        .description("Disallows processors of a given type.")
+        .description("Processors of the given type will produce a rule violation (i.e. they shouldn't exist).")
         .required(true)
         .addValidator(StandardValidators.NON_BLANK_VALIDATOR)
         .defaultValue(null)
@@ -58,7 +60,7 @@ public class DisallowProcessorType extends AbstractFlowAnalysisRule {
         String ruleName,
         FlowAnalysisRuleContext context,
         Object component,
-        Function<String, VersionedControllerService> controllerServiceDetailsProvider
+        Function<String, VersionedControllerService> versionedControllerServiceProvider
     ) {
         String processorType = context.getProperty(PROCESSOR_TYPE).getValue();
 

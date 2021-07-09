@@ -18,14 +18,47 @@ package org.apache.nifi.validation;
 
 import java.util.concurrent.ConcurrentMap;
 
+/**
+ * Manages {@link RuleViolation}s produced during flow analysis and stores them in a multidimensional map
+ */
 public interface FlowAnalysisContext {
+    /**
+     * Add a new violation
+     * @param ruleViolation the violation to be added
+     */
     void addRuleViolation(RuleViolation ruleViolation);
 
-    void updateRuleViolation(String subjectId, String scope, String ruleName, boolean enabled);
+    /**
+     * Update an existing violation
+     * @param subjectId see {@link RuleViolation#getSubjectId()}
+     * @param scope see {@link RuleViolation#getScope()}
+     * @param ruleId see {@link RuleViolation#getRuleId()}
+     * @param enabled see {@link RuleViolation#isEnabled()}
+     */
+    void updateRuleViolation(String subjectId, String scope, String ruleId, boolean enabled);
 
-    void deleteRuleViolation(String subjectId, String scope, String ruleName);
+    /**
+     * Delete an existing violation
+     * @param subjectId see {@link RuleViolation#getSubjectId()}
+     * @param scope see {@link RuleViolation#getScope()}
+     * @param ruleId see {@link RuleViolation#getRuleId()}
+     */
+    void deleteRuleViolation(String subjectId, String scope, String ruleId);
 
+    /**
+     * Provides the stored rule violations stored in a multidimensional map.
+     *  The keys in the map are:
+     *         <ol>
+     *            <li>id of the subject the violation corresponds to</li>
+     *            <li>the scope of the analysis</li>
+     *            <li>id of the rule</li>
+     *         </ol>
+     * @return the map that stores the violations
+     */
     ConcurrentMap<String, ConcurrentMap<String, ConcurrentMap<String, RuleViolation>>> getRuleViolations();
 
+    /**
+     * Removes empty entries from the map storing the rule violations
+     */
     void cleanUp();
 }

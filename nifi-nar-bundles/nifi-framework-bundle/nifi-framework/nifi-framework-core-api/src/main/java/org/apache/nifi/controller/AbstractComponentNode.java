@@ -632,7 +632,7 @@ public abstract class AbstractComponentNode implements ComponentNode {
                         new ValidationResult.Builder()
                             .subject(getComponent().getClass().getSimpleName())
                             .valid(false)
-                            .explanation(ruleViolation.getErrorMessage())
+                            .explanation(ruleViolation.getViolationMessage())
                             .build()
                     )
                 ));

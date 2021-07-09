@@ -515,8 +515,8 @@ public class ControllerResource extends ApplicationResource {
                 resultDTO.setRuleType(ruleViolation.getRuleType().toString());
                 resultDTO.setSubjectId(ruleViolation.getSubjectId());
                 resultDTO.setScope(ruleViolation.getScope());
-                resultDTO.setRuleName(ruleViolation.getRuleId());
-                resultDTO.setErrorMessage(ruleViolation.getErrorMessage());
+                resultDTO.setRuleId(ruleViolation.getRuleId());
+                resultDTO.setViolationMessage(ruleViolation.getViolationMessage());
                 resultDTO.setEnabled(ruleViolation.isEnabled());
 
                 return resultDTO;

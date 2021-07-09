@@ -21,12 +21,18 @@ import org.apache.nifi.web.api.dto.FlowAnalysisResultDTO;
 import javax.xml.bind.annotation.XmlRootElement;
 import java.util.Set;
 
+/**
+ * A serialized representation of this class can be placed in the entity body of a request or response to or from the API.
+ *  This particular entity holds a reference to a collection of {@link FlowAnalysisResultDTO}.
+ */
 @XmlRootElement(name = "flowAnalysisResultEntity")
 public class FlowAnalysisResultEntity extends Entity {
 
     private Set<FlowAnalysisResultDTO> analysisResults;
 
-
+    /**
+     * @return set of flow analysis results that are being serialized
+     */
     public Set<FlowAnalysisResultDTO> getAnalysisResults() {
         return analysisResults;
     }

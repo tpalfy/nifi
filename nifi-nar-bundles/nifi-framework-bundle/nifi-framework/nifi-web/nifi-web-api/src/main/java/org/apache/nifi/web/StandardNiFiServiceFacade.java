@@ -673,7 +673,7 @@ public class StandardNiFiServiceFacade implements NiFiServiceFacade {
 
     @Override
     public void verifyUpdateFlowAnalysisRule(final FlowAnalysisRuleDTO flowAnalysisRuleDTO) {
-        // if tasks does not exist, then the update request is likely creating it
+        // if the rule does not exist, then the update request is likely creating it
         // so we don't verify since it will fail
         if (flowAnalysisRuleDAO.hasFlowAnalysisRule(flowAnalysisRuleDTO.getId())) {
             flowAnalysisRuleDAO.verifyUpdate(flowAnalysisRuleDTO);
@@ -688,8 +688,8 @@ public class StandardNiFiServiceFacade implements NiFiServiceFacade {
     }
 
     @Override
-    public void verifyCanClearFlowAnalysisRuleState(String id) {
-        flowAnalysisRuleDAO.verifyClearState(id);
+    public void verifyCanClearFlowAnalysisRuleState(String flowAnalysisRuleId) {
+        flowAnalysisRuleDAO.verifyClearState(flowAnalysisRuleId);
     }
 
     @Override
@@ -722,8 +722,8 @@ public class StandardNiFiServiceFacade implements NiFiServiceFacade {
     }
 
     @Override
-    public FlowAnalysisRuleEntity getFlowAnalysisRule(String id) {
-        final FlowAnalysisRuleNode flowAnalysisRule = flowAnalysisRuleDAO.getFlowAnalysisRule(id);
+    public FlowAnalysisRuleEntity getFlowAnalysisRule(String flowAnalysisRuleId) {
+        final FlowAnalysisRuleNode flowAnalysisRule = flowAnalysisRuleDAO.getFlowAnalysisRule(flowAnalysisRuleId);
         return createFlowAnalysisRuleEntity(flowAnalysisRule);
     }
 
@@ -737,8 +737,8 @@ public class StandardNiFiServiceFacade implements NiFiServiceFacade {
     }
 
     @Override
-    public PropertyDescriptorDTO getFlowAnalysisRulePropertyDescriptor(String id, String propertyName) {
-        final FlowAnalysisRuleNode flowAnalysisRule = flowAnalysisRuleDAO.getFlowAnalysisRule(id);
+    public PropertyDescriptorDTO getFlowAnalysisRulePropertyDescriptor(String flowAnalysisRuleId, String propertyName) {
+        final FlowAnalysisRuleNode flowAnalysisRule = flowAnalysisRuleDAO.getFlowAnalysisRule(flowAnalysisRuleId);
         PropertyDescriptor descriptor = flowAnalysisRule.getFlowAnalysisRule().getPropertyDescriptor(propertyName);
 
         // return an invalid descriptor if the flow analysis rule doesn't support this property
@@ -750,18 +750,18 @@ public class StandardNiFiServiceFacade implements NiFiServiceFacade {
     }
 
     @Override
-    public ComponentStateDTO getFlowAnalysisRuleState(String id) {
-        final StateMap clusterState = isClustered() ? flowAnalysisRuleDAO.getState(id, Scope.CLUSTER) : null;
-        final StateMap localState = flowAnalysisRuleDAO.getState(id, Scope.LOCAL);
+    public ComponentStateDTO getFlowAnalysisRuleState(String flowAnalysisRuleId) {
+        final StateMap clusterState = isClustered() ? flowAnalysisRuleDAO.getState(flowAnalysisRuleId, Scope.CLUSTER) : null;
+        final StateMap localState = flowAnalysisRuleDAO.getState(flowAnalysisRuleId, Scope.LOCAL);
 
         // flow analysis rule will be non null as it was already found when getting the state
-        final FlowAnalysisRuleNode flowAnalysisRule = flowAnalysisRuleDAO.getFlowAnalysisRule(id);
-        return dtoFactory.createComponentStateDTO(id, flowAnalysisRule.getFlowAnalysisRule().getClass(), localState, clusterState);
+        final FlowAnalysisRuleNode flowAnalysisRule = flowAnalysisRuleDAO.getFlowAnalysisRule(flowAnalysisRuleId);
+        return dtoFactory.createComponentStateDTO(flowAnalysisRuleId, flowAnalysisRule.getFlowAnalysisRule().getClass(), localState, clusterState);
     }
 
     @Override
-    public void clearFlowAnalysisRuleState(String id) {
-        flowAnalysisRuleDAO.clearState(id);
+    public void clearFlowAnalysisRuleState(String flowAnalysisRuleId) {
+        flowAnalysisRuleDAO.clearState(flowAnalysisRuleId);
     }
 
     @Override
@@ -784,14 +784,14 @@ public class StandardNiFiServiceFacade implements NiFiServiceFacade {
     }
 
     @Override
-    public FlowAnalysisRuleEntity deleteFlowAnalysisRule(Revision revision, String id) {
-        final FlowAnalysisRuleNode flowAnalysisRule = flowAnalysisRuleDAO.getFlowAnalysisRule(id);
+    public FlowAnalysisRuleEntity deleteFlowAnalysisRule(Revision revision, String flowAnalysisRuleId) {
+        final FlowAnalysisRuleNode flowAnalysisRule = flowAnalysisRuleDAO.getFlowAnalysisRule(flowAnalysisRuleId);
         final PermissionsDTO permissions = dtoFactory.createPermissionsDto(flowAnalysisRule);
         final PermissionsDTO operatePermissions = dtoFactory.createPermissionsDto(new OperationAuthorizable(flowAnalysisRule));
         final FlowAnalysisRuleDTO snapshot = deleteComponent(
                 revision,
                 flowAnalysisRule.getResource(),
-                () -> flowAnalysisRuleDAO.deleteFlowAnalysisRule(id),
+                () -> flowAnalysisRuleDAO.deleteFlowAnalysisRule(flowAnalysisRuleId),
                 true,
                 dtoFactory.createFlowAnalysisRuleDto(flowAnalysisRule));
 

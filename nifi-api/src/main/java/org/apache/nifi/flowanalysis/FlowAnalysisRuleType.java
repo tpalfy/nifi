@@ -17,6 +17,13 @@
 package org.apache.nifi.flowanalysis;
 
 public enum FlowAnalysisRuleType {
+    /**
+     * Rules of this type provide recommendations.
+     */
     RECOMMENDATION,
+    /**
+     * Rules of this type provide warnings. These warning also invalidate the corresponding components and fixing
+     *  these problems are to be considered mandatory.
+     */
     POLICY;
 }

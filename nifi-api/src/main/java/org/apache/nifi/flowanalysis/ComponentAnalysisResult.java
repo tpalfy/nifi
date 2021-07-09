@@ -18,6 +18,9 @@ package org.apache.nifi.flowanalysis;
 
 import java.util.StringJoiner;
 
+/**
+ * Holds information about a component violating a {@link FlowAnalysisRule}
+ */
 public class ComponentAnalysisResult {
     private final String message;
 
@@ -25,6 +28,9 @@ public class ComponentAnalysisResult {
         this.message = message;
     }
 
+    /**
+     * @return the rule violation message
+     */
     public String getMessage() {
         return message;
     }

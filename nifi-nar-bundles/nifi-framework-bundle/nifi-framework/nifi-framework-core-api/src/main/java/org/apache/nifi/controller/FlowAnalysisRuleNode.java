@@ -29,6 +29,9 @@ public interface FlowAnalysisRuleNode extends ComponentNode {
 
     void setRuleType(FlowAnalysisRuleType ruleType);
 
+    /**
+     * @return the type of the flow analysis rule
+     */
     FlowAnalysisRuleType getRuleType();
 
     void setFlowAnalysisRule(LoggableComponent<FlowAnalysisRule> flowAnalysisRule);
@@ -37,6 +40,9 @@ public interface FlowAnalysisRuleNode extends ComponentNode {
 
     ConfigurationContext getConfigurationContext();
 
+    /**
+     * @return the current state of the flow analysis rule
+     */
     FlowAnalysisRuleState getState();
 
     boolean isEnabled();

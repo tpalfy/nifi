@@ -43,6 +43,10 @@ public abstract class AbstractFlowAnalysisRule extends AbstractConfigurableCompo
         return description;
     }
 
+    /**
+     * @return the logger that has been provided to the component by the
+     * framework in its initialize method
+     */
     protected ComponentLog getLogger() {
         return logger;
     }

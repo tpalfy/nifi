@@ -21,13 +21,13 @@ public class DelegateFlowAnalysisRule extends AbstractFlowAnalysisRule {
     }
 
     @Override
-    public Optional<ComponentAnalysisResult> analyzeComponent(String ruleName, FlowAnalysisRuleContext context, Object component, Function<String, VersionedControllerService> controllerServiceDetailsProvider) {
-        return delegate.analyzeComponent(ruleName, context, component, controllerServiceDetailsProvider);
+    public Optional<ComponentAnalysisResult> analyzeComponent(String ruleName, FlowAnalysisRuleContext context, Object component, Function<String, VersionedControllerService> versionedControllerServiceProvider) {
+        return delegate.analyzeComponent(ruleName, context, component, versionedControllerServiceProvider);
     }
 
     @Override
-    public Collection<GroupAnalysisResult> analyzeProcessGroup(String ruleName, FlowAnalysisRuleContext context, VersionedProcessGroup processGroup, Function<String, VersionedControllerService> controllerServiceDetailsProvider) {
-        return delegate.analyzeProcessGroup(ruleName, context, processGroup, controllerServiceDetailsProvider);
+    public Collection<GroupAnalysisResult> analyzeProcessGroup(String ruleName, FlowAnalysisRuleContext context, VersionedProcessGroup processGroup, Function<String, VersionedControllerService> versionedControllerServiceProvider) {
+        return delegate.analyzeProcessGroup(ruleName, context, processGroup, versionedControllerServiceProvider);
     }
 
     @Override

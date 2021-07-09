@@ -22,11 +22,30 @@ import org.apache.nifi.controller.service.ControllerServiceProvider;
 import org.apache.nifi.nar.ExtensionManager;
 import org.apache.nifi.flow.VersionedProcessGroup;
 
+/**
+ * Analyzes components, parts or the entirety of the flow.
+ */
 public interface FlowAnalyzer {
+    /**
+     * Analyzes a processor
+     *
+     * @param processorNode the processor (as a node) to be analyzed
+     */
     void analyzeProcessor(ProcessorNode processorNode);
 
+    /**
+     * Analyzes a controller service
+     *
+     * @param controllerServiceNode the controller service (as a node) to be analyzed
+     */
     void analyzeControllerService(ControllerServiceNode controllerServiceNode);
 
+    /**
+     * Analyze the flow or a part of it
+     *
+     * @param processGroup the process group (as a {@link org.apache.nifi.flow.VersionedComponent VersionedComponent})
+     *                     representing (a part of) the flow to be analyzed
+     */
     void analyzeProcessGroup(VersionedProcessGroup processGroup);
 
     void setFlowAnalysisRuleProvider(FlowAnalysisRuleProvider flowAnalysisRuleProvider);

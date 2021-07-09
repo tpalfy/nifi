@@ -30,7 +30,7 @@ public class FlowAnalysisRuleTypesEntity extends Entity {
     private Set<DocumentedTypeDTO> flowAnalysisRuleTypes;
 
     /**
-     * @return list of reporting task types that are being serialized
+     * @return set of reporting task types that are being serialized
      */
     public Set<DocumentedTypeDTO> getFlowAnalysisRuleTypes() {
         return flowAnalysisRuleTypes;

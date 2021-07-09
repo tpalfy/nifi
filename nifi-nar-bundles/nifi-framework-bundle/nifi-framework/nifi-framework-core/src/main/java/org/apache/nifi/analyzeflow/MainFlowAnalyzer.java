@@ -50,6 +50,9 @@ import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
+/**
+ * {@link FlowAnalyzer} that uses {@link org.apache.nifi.flowanalysis.FlowAnalysisRule FlowAnalysisRules}.
+ */
 public class MainFlowAnalyzer implements FlowAnalyzer {
     private Logger logger = LoggerFactory.getLogger(this.getClass());
 
@@ -253,15 +256,15 @@ public class MainFlowAnalyzer implements FlowAnalyzer {
         logger.debug("Flow Analysis took {} ms", durationMs);
     }
 
-    private void deleteGroupViolations(VersionedProcessGroup processGroup, Consumer<String> groupViolationRemover) {
-        groupViolationRemover.accept(processGroup.getIdentifier());
-        processGroup.getProcessGroups().forEach(childProcessGroup -> deleteGroupViolations(childProcessGroup, groupViolationRemover));
-    }
-
-    public NiFiRegistryFlowMapper createMapper() {
+    private NiFiRegistryFlowMapper createMapper() {
         NiFiRegistryFlowMapper mapper = new NiFiRegistryFlowMapper(extensionManager, Function.identity());
 
         return mapper;
+    }
+
+    private void deleteGroupViolations(VersionedProcessGroup processGroup, Consumer<String> groupViolationRemover) {
+        groupViolationRemover.accept(processGroup.getIdentifier());
+        processGroup.getProcessGroups().forEach(childProcessGroup -> deleteGroupViolations(childProcessGroup, groupViolationRemover));
     }
 
     @VisibleForTesting

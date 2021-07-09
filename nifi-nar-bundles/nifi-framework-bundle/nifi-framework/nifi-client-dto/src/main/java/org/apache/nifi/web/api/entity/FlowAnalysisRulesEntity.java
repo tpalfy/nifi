@@ -28,7 +28,7 @@ public class FlowAnalysisRulesEntity extends Entity {
     private Set<FlowAnalysisRuleEntity> flowAnalysisRules;
 
     /**
-     * @return list of flow analysis rules that are being serialized
+     * @return set of flow analysis rules that are being serialized
      */
     public Set<FlowAnalysisRuleEntity> getFlowAnalysisRules() {
         return flowAnalysisRules;

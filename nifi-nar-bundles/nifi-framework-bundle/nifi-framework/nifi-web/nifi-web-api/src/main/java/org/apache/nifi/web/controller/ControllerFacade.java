@@ -566,6 +566,14 @@ public class ControllerFacade implements Authorizable {
         return dtoFactory.fromDocumentedTypes(getExtensionManager().getExtensions(ReportingTask.class), bundleGroupFilter, bundleArtifactFilter, typeFilter);
     }
 
+    /**
+     * Gets the FlowAnalysisRule types that this controller supports.
+     *
+     * @param bundleGroupFilter if specified, must be member of bundle group
+     * @param bundleArtifactFilter if specified, must be member of bundle artifact
+     * @param typeFilter if specified, type must match
+     * @return the FlowAnalysisRule types that this controller supports
+     */
     public Set<DocumentedTypeDTO> getFlowAnalysisRuleTypes(final String bundleGroupFilter, final String bundleArtifactFilter, final String typeFilter) {
         return dtoFactory.fromDocumentedTypes(getExtensionManager().getExtensions(FlowAnalysisRule.class), bundleGroupFilter, bundleArtifactFilter, typeFilter);
     }

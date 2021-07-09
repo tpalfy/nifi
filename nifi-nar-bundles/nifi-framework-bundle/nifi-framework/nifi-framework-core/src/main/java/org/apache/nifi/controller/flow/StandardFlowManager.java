@@ -421,6 +421,70 @@ public class StandardFlowManager extends AbstractFlowManager implements FlowMana
         return taskNode;
     }
 
+    @Override
+    public FlowAnalysisRuleNode createFlowAnalysisRule(
+        String type,
+        String id,
+        BundleCoordinate bundleCoordinate,
+        Set<URL> additionalUrls,
+        boolean firstTimeAdded,
+        boolean register
+    ) {
+        if (type == null || id == null || bundleCoordinate == null) {
+            throw new NullPointerException();
+        }
+
+        // make sure the first reference to LogRepository happens outside of a NarCloseable so that we use the framework's ClassLoader
+        final LogRepository logRepository = LogRepositoryFactory.getRepository(id);
+        final ExtensionManager extensionManager = flowController.getExtensionManager();
+
+        final FlowAnalysisRuleNode flowAnalysisNode = new ExtensionBuilder()
+            .identifier(id)
+            .type(type)
+            .bundleCoordinate(bundleCoordinate)
+            .extensionManager(flowController.getExtensionManager())
+            .controllerServiceProvider(flowController.getControllerServiceProvider())
+            .processScheduler(processScheduler)
+            .nodeTypeProvider(flowController)
+            .validationTrigger(flowController.getValidationTrigger())
+            .reloadComponent(flowController.getReloadComponent())
+            .variableRegistry(flowController.getVariableRegistry())
+            .addClasspathUrls(additionalUrls)
+            .kerberosConfig(flowController.createKerberosConfig(nifiProperties))
+            .flowController(flowController)
+            .extensionManager(extensionManager)
+            .flowAnalysisContext(flowAnalysisContext)
+            .flowAnalyzer(flowAnalyzer)
+            .buildFlowAnalysisRuleNode();
+
+        LogRepositoryFactory.getRepository(flowAnalysisNode.getIdentifier()).setLogger(flowAnalysisNode.getLogger());
+
+        if (firstTimeAdded) {
+            final Class<?> taskClass = flowAnalysisNode.getFlowAnalysisRule().getClass();
+            final String identifier = flowAnalysisNode.getFlowAnalysisRule().getIdentifier();
+
+            try (final NarCloseable x = NarCloseable.withComponentNarLoader(flowController.getExtensionManager(), taskClass, identifier)) {
+                ReflectionUtils.invokeMethodsWithAnnotation(OnAdded.class, flowAnalysisNode.getFlowAnalysisRule());
+
+                if (flowController.isInitialized()) {
+                    ReflectionUtils.quietlyInvokeMethodsWithAnnotation(OnConfigurationRestored.class, flowAnalysisNode.getFlowAnalysisRule());
+                }
+            } catch (final Exception e) {
+                throw new ComponentLifeCycleException("Failed to invoke On-Added Lifecycle methods of " + flowAnalysisNode.getFlowAnalysisRule(), e);
+            }
+        }
+
+        if (register) {
+            onFlowAnalysisRuleAdded(flowAnalysisNode);
+
+            // Register log observer to provide bulletins when reporting task logs anything at WARN level or above
+            logRepository.addObserver(StandardProcessorNode.BULLETIN_OBSERVER_ID, LogLevel.WARN,
+                new FlowAnalysisRuleLogObserver(bulletinRepository, flowAnalysisNode));
+        }
+
+        return flowAnalysisNode;
+    }
+
     public Set<ControllerServiceNode> getRootControllerServices() {
         return new HashSet<>(rootControllerServices.values());
     }
@@ -555,69 +619,5 @@ public class StandardFlowManager extends AbstractFlowManager implements FlowMana
 
     public FlowAnalyzer getFlowAnalyzer() {
         return flowAnalyzer;
-    }
-
-    @Override
-    public FlowAnalysisRuleNode createFlowAnalysisRule(
-        String type,
-        String id,
-        BundleCoordinate bundleCoordinate,
-        Set<URL> additionalUrls,
-        boolean firstTimeAdded,
-        boolean register
-    ) {
-        if (type == null || id == null || bundleCoordinate == null) {
-            throw new NullPointerException();
-        }
-
-        // make sure the first reference to LogRepository happens outside of a NarCloseable so that we use the framework's ClassLoader
-        final LogRepository logRepository = LogRepositoryFactory.getRepository(id);
-        final ExtensionManager extensionManager = flowController.getExtensionManager();
-
-        final FlowAnalysisRuleNode flowAnalysisNode = new ExtensionBuilder()
-            .identifier(id)
-            .type(type)
-            .bundleCoordinate(bundleCoordinate)
-            .extensionManager(flowController.getExtensionManager())
-            .controllerServiceProvider(flowController.getControllerServiceProvider())
-            .processScheduler(processScheduler)
-            .nodeTypeProvider(flowController)
-            .validationTrigger(flowController.getValidationTrigger())
-            .reloadComponent(flowController.getReloadComponent())
-            .variableRegistry(flowController.getVariableRegistry())
-            .addClasspathUrls(additionalUrls)
-            .kerberosConfig(flowController.createKerberosConfig(nifiProperties))
-            .flowController(flowController)
-            .extensionManager(extensionManager)
-            .flowAnalysisContext(flowAnalysisContext)
-            .flowAnalyzer(flowAnalyzer)
-            .buildFlowAnalysisRuleNode();
-
-        LogRepositoryFactory.getRepository(flowAnalysisNode.getIdentifier()).setLogger(flowAnalysisNode.getLogger());
-
-        if (firstTimeAdded) {
-            final Class<?> taskClass = flowAnalysisNode.getFlowAnalysisRule().getClass();
-            final String identifier = flowAnalysisNode.getFlowAnalysisRule().getIdentifier();
-
-            try (final NarCloseable x = NarCloseable.withComponentNarLoader(flowController.getExtensionManager(), taskClass, identifier)) {
-                ReflectionUtils.invokeMethodsWithAnnotation(OnAdded.class, flowAnalysisNode.getFlowAnalysisRule());
-
-                if (flowController.isInitialized()) {
-                    ReflectionUtils.quietlyInvokeMethodsWithAnnotation(OnConfigurationRestored.class, flowAnalysisNode.getFlowAnalysisRule());
-                }
-            } catch (final Exception e) {
-                throw new ComponentLifeCycleException("Failed to invoke On-Added Lifecycle methods of " + flowAnalysisNode.getFlowAnalysisRule(), e);
-            }
-        }
-
-        if (register) {
-            onFlowAnalysisRuleAdded(flowAnalysisNode);
-
-            // Register log observer to provide bulletins when reporting task logs anything at WARN level or above
-            logRepository.addObserver(StandardProcessorNode.BULLETIN_OBSERVER_ID, LogLevel.WARN,
-                new FlowAnalysisRuleLogObserver(bulletinRepository, flowAnalysisNode));
-        }
-
-        return flowAnalysisNode;
     }
 }

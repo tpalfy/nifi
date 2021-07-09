@@ -74,8 +74,21 @@ public interface ComponentStateDAO {
      */
     void clearState(ReportingTaskNode reportingTask);
 
+    /**
+     * Gets the state for the specified flow analysis rule.
+     *
+     * @param flowAnalysisRule flow analysis rule
+     * @param scope     scope
+     * @return state map
+     */
+
     StateMap getState(FlowAnalysisRuleNode flowAnalysisRule, Scope scope);
 
+    /**
+     * Clears the state for the specified flow analysis rule.
+     *
+     * @param flowAnalysisRule flow analysis rule
+     */
     void clearState(FlowAnalysisRuleNode flowAnalysisRule);
 
     /**
