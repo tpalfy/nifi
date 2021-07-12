@@ -17,6 +17,7 @@
 package org.apache.nifi.analyzeflow.ruleimpl;
 
 import org.apache.nifi.annotation.documentation.CapabilityDescription;
+import org.apache.nifi.annotation.documentation.Tags;
 import org.apache.nifi.components.PropertyDescriptor;
 import org.apache.nifi.flow.VersionedControllerService;
 import org.apache.nifi.flow.VersionedProcessor;
@@ -31,7 +32,8 @@ import java.util.List;
 import java.util.Optional;
 import java.util.function.Function;
 
-@CapabilityDescription("Produces a rule violation if encounters a processor of a given type.")
+@Tags({"component", "processor", "type"})
+@CapabilityDescription("Produces rule violations for each processor of a given type.")
 public class DisallowProcessorType extends AbstractFlowAnalysisRule {
     public static final PropertyDescriptor PROCESSOR_TYPE = new PropertyDescriptor.Builder()
         .name("processor-type")
