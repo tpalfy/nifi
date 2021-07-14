@@ -26,15 +26,18 @@ import java.util.StringJoiner;
  *  One such analysis can result in multiple instances of this class.
  */
 public class GroupAnalysisResult {
+    private final Optional<String> subViolationId;
     private final Optional<VersionedComponent> component;
     private final String message;
 
     /**
      * Creates a result object that corresponds to the entirety of the analyzed process group.
+     * @param subViolationId an id that represents the type of general violation within the same rule check.
+     *                       Must be unique within the analysis run of the same rule.
      * @param messages the rule violation message
      */
-    public GroupAnalysisResult(String messages) {
-        this(Optional.empty(), messages);
+    public GroupAnalysisResult(String subViolationId, String messages) {
+        this(Optional.of(subViolationId), Optional.empty(), messages);
     }
 
     /**
@@ -43,19 +46,21 @@ public class GroupAnalysisResult {
      * @param messages the rule violation message
      */
     public GroupAnalysisResult(VersionedComponent component, String messages) {
-        this(Optional.of(component), messages);
+        this(Optional.empty(), Optional.of(component), messages);
     }
 
-    private GroupAnalysisResult(Optional<VersionedComponent> component, String messages) {
+    private GroupAnalysisResult(Optional<String> subViolationId, Optional<VersionedComponent> component, String messages) {
+        this.subViolationId = subViolationId;
         this.component = component;
         this.message = messages;
     }
 
+
     /**
-     * @return the rule violation message
+     * @return an id that represents the unique type of general violation within the same rule check
      */
-    public String getMessage() {
-        return message;
+    public Optional<String> getSubViolationId() {
+        return subViolationId;
     }
 
     /**
@@ -63,6 +68,13 @@ public class GroupAnalysisResult {
      */
     public Optional<VersionedComponent> getComponent() {
         return component;
+    }
+
+    /**
+     * @return the rule violation message
+     */
+    public String getMessage() {
+        return message;
     }
 
     @Override

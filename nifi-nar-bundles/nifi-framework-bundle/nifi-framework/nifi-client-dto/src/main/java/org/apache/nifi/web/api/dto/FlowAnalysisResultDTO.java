@@ -17,6 +17,7 @@
 package org.apache.nifi.web.api.dto;
 
 import javax.xml.bind.annotation.XmlType;
+import java.util.Objects;
 
 /**
  * A result of a rule violation produced during a flow analysis
@@ -98,5 +99,23 @@ public class FlowAnalysisResultDTO {
 
     public void setEnabled(boolean enabled) {
         this.enabled = enabled;
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        FlowAnalysisResultDTO that = (FlowAnalysisResultDTO) o;
+        return enabled == that.enabled
+            && Objects.equals(ruleType, that.ruleType)
+            && Objects.equals(subjectId, that.subjectId)
+            && Objects.equals(ruleId, that.ruleId)
+            && Objects.equals(violationMessage, that.violationMessage)
+            && Objects.equals(scope, that.scope);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(ruleType, subjectId, ruleId, violationMessage, enabled, scope);
     }
 }

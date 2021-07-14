@@ -16,7 +16,6 @@
  */
 package org.apache.nifi.analyzeflow;
 
-import com.google.common.annotations.VisibleForTesting;
 import org.apache.nifi.controller.ProcessorNode;
 import org.apache.nifi.controller.flowanalysis.FlowAnalysisRuleProvider;
 import org.apache.nifi.controller.flowanalysis.FlowAnalyzer;
@@ -45,7 +44,6 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
-import java.util.UUID;
 import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.stream.Collectors;
@@ -134,19 +132,15 @@ public class MainFlowAnalyzer implements FlowAnalyzer {
 
         Set<FlowAnalysisRuleNode> flowAnalysisRules = flowAnalysisRuleProvider.getAllFlowAnalysisRules();
 
-        deleteGroupViolations(
+        maskGroupViolations(
             processGroup,
             _groupId -> flowAnalysisContext.getRuleViolations()
-                .values()
-                .forEach(scopeToRuleToRuleViolations -> scopeToRuleToRuleViolations.remove(_groupId))
+                .values().stream()
+                .map(scopeToRuleIdToRuleViolation -> scopeToRuleIdToRuleViolation.get(groupId))
+                .filter(Objects::nonNull)
+                .map(Map::values).flatMap(Collection::stream)
+                .forEach(ruleViolation -> ruleViolation.setAvailable(false))
         );
-
-        flowAnalysisContext.getRuleViolations()
-            .values().stream()
-            .map(scopeToRuleIdToRuleViolation -> scopeToRuleIdToRuleViolation.get(groupId))
-            .filter(Objects::nonNull)
-            .map(Map::values).flatMap(Collection::stream)
-            .forEach(ruleViolation -> ruleViolation.setAvailable(false));
 
         flowAnalysisRules.stream()
             .filter(FlowAnalysisRuleNode::isEnabled)
@@ -174,12 +168,11 @@ public class MainFlowAnalyzer implements FlowAnalyzer {
                             );
                         });
 
-                        if (!analysisResult.getComponent().isPresent()) {
-                            String id = generateRandomProcessGroupViolationSubjectId();
+                        if (!analysisResult.getComponent().isPresent() && analysisResult.getSubViolationId().isPresent()) {
                             flowAnalysisContext.addRuleViolation(
                                 new RuleViolation(
                                     flowAnalysisRuleNode.getRuleType(),
-                                    id,
+                                    analysisResult.getSubViolationId().get(),
                                     groupId,
                                     ruleId,
                                     analysisResult.getMessage()
@@ -191,6 +184,12 @@ public class MainFlowAnalyzer implements FlowAnalyzer {
                     logger.error("FlowAnalysis error while running '{}' against group '{}'", flowAnalysisRuleNode.getName(), groupId, e);
                 }
             });
+
+        flowAnalysisContext.getRuleViolations()
+            .values().stream()
+            .map(scopeToRuleIdToRuleViolation -> scopeToRuleIdToRuleViolation.get(groupId))
+            .filter(Objects::nonNull)
+            .forEach(ruleIdToRuleViolation -> ruleIdToRuleViolation.entrySet().removeIf(ruleIdAndRuleViolation -> !ruleIdAndRuleViolation.getValue().isAvailable()));
 
         flowAnalysisContext.cleanUp();
 
@@ -262,14 +261,9 @@ public class MainFlowAnalyzer implements FlowAnalyzer {
         return mapper;
     }
 
-    private void deleteGroupViolations(VersionedProcessGroup processGroup, Consumer<String> groupViolationRemover) {
-        groupViolationRemover.accept(processGroup.getIdentifier());
-        processGroup.getProcessGroups().forEach(childProcessGroup -> deleteGroupViolations(childProcessGroup, groupViolationRemover));
-    }
-
-    @VisibleForTesting
-    protected String generateRandomProcessGroupViolationSubjectId() {
-        return "group_" + UUID.randomUUID().toString();
+    private void maskGroupViolations(VersionedProcessGroup processGroup, Consumer<String> groupViolationMasker) {
+        groupViolationMasker.accept(processGroup.getIdentifier());
+        processGroup.getProcessGroups().forEach(childProcessGroup -> maskGroupViolations(childProcessGroup, groupViolationMasker));
     }
 
     @Override

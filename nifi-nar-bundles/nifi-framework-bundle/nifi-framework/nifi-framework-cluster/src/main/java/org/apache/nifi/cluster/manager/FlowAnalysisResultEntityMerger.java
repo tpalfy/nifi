@@ -14,31 +14,20 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.apache.nifi.web.api.entity;
+package org.apache.nifi.cluster.manager;
 
+import org.apache.nifi.cluster.protocol.NodeIdentifier;
 import org.apache.nifi.web.api.dto.FlowAnalysisResultDTO;
+import org.apache.nifi.web.api.entity.FlowAnalysisResultEntity;
 
-import javax.xml.bind.annotation.XmlRootElement;
-import java.util.HashSet;
+import java.util.Map;
 import java.util.Set;
 
-/**
- * A serialized representation of this class can be placed in the entity body of a request or response to or from the API.
- *  This particular entity holds a reference to a collection of {@link FlowAnalysisResultDTO}.
- */
-@XmlRootElement(name = "flowAnalysisResultEntity")
-public class FlowAnalysisResultEntity extends Entity {
-
-    private Set<FlowAnalysisResultDTO> analysisResults = new HashSet<>();
-
-    /**
-     * @return set of flow analysis results that are being serialized
-     */
-    public Set<FlowAnalysisResultDTO> getAnalysisResults() {
-        return analysisResults;
-    }
-
-    public void setAnalysisResults(Set<FlowAnalysisResultDTO> analysisResults) {
-        this.analysisResults = analysisResults;
+public class FlowAnalysisResultEntityMerger {
+    public void merge(FlowAnalysisResultEntity clientEntity, Map<NodeIdentifier, FlowAnalysisResultEntity> entityMap) {
+        Set<FlowAnalysisResultDTO> aggregateAnalysisResults = clientEntity.getAnalysisResults();
+        entityMap.values().stream()
+            .map(FlowAnalysisResultEntity::getAnalysisResults)
+            .forEach(aggregateAnalysisResults::addAll);
     }
 }

@@ -41,12 +41,7 @@ public class FlowAnalyzerIT extends AbstractFlowAnalysisIT {
     public void setUp() throws Exception {
         processGroupViolationCounter = new AtomicInteger(0);
 
-        mainFlowAnalyzer = new MainFlowAnalyzer() {
-            @Override
-            protected String generateRandomProcessGroupViolationSubjectId() {
-                return "processGroupViolation_" + processGroupViolationCounter.getAndIncrement();
-            }
-        };
+        mainFlowAnalyzer = new MainFlowAnalyzer();
 
         mainFlowAnalyzer.setFlowAnalysisRuleProvider(getFlowController());
         mainFlowAnalyzer.setExtensionManager(getExtensionManager());
@@ -358,7 +353,7 @@ public class FlowAnalyzerIT extends AbstractFlowAnalysisIT {
             public Collection<GroupAnalysisResult> analyzeProcessGroup(String ruleName, FlowAnalysisRuleContext context, VersionedProcessGroup processGroup, Function<String, VersionedControllerService> versionedControllerServiceProvider) {
                 Collection<GroupAnalysisResult> results = new ArrayList<>();
 
-                results.add(new GroupAnalysisResult(violationMessage));
+                results.add(createGeneralGroupAnalysisResult(violationMessage));
 
                 return results;
             }
@@ -390,7 +385,7 @@ public class FlowAnalyzerIT extends AbstractFlowAnalysisIT {
             public Collection<GroupAnalysisResult> analyzeProcessGroup(String ruleName, FlowAnalysisRuleContext context, VersionedProcessGroup processGroup, Function<String, VersionedControllerService> versionedControllerServiceProvider) {
                 Collection<GroupAnalysisResult> results = new ArrayList<>();
 
-                results.add(new GroupAnalysisResult(violationMessage));
+                results.add(createGeneralGroupAnalysisResult(violationMessage));
 
                 return results;
             }
@@ -436,7 +431,7 @@ public class FlowAnalyzerIT extends AbstractFlowAnalysisIT {
             public Collection<GroupAnalysisResult> analyzeProcessGroup(String ruleName, FlowAnalysisRuleContext context, VersionedProcessGroup processGroup, Function<String, VersionedControllerService> versionedControllerServiceProvider) {
                 Collection<GroupAnalysisResult> results = new ArrayList<>();
 
-                results.add(new GroupAnalysisResult(processGroupViolationMessage));
+                results.add(createGeneralGroupAnalysisResult(processGroupViolationMessage));
 
                 processGroup.getProcessors().stream()
                     .map(processor -> new GroupAnalysisResult(processor, processorViolationMessage))
@@ -497,7 +492,7 @@ public class FlowAnalyzerIT extends AbstractFlowAnalysisIT {
             public Collection<GroupAnalysisResult> analyzeProcessGroup(String ruleName, FlowAnalysisRuleContext context, VersionedProcessGroup processGroup, Function<String, VersionedControllerService> versionedControllerServiceProvider) {
                 Collection<GroupAnalysisResult> results = new ArrayList<>();
 
-                results.add(new GroupAnalysisResult(processGroupViolationMessage));
+                results.add(createGeneralGroupAnalysisResult(processGroupViolationMessage));
 
                 return results;
             }
@@ -564,7 +559,7 @@ public class FlowAnalyzerIT extends AbstractFlowAnalysisIT {
             public Collection<GroupAnalysisResult> analyzeProcessGroup(String ruleName, FlowAnalysisRuleContext context, VersionedProcessGroup processGroup, Function<String, VersionedControllerService> versionedControllerServiceProvider) {
                 Collection<GroupAnalysisResult> results = new ArrayList<>();
 
-                results.add(new GroupAnalysisResult(processGroupViolationMessage));
+                results.add(createGeneralGroupAnalysisResult(processGroupViolationMessage));
 
                 processGroup.getProcessors().stream()
                     .map(processor -> new GroupAnalysisResult(processor, processorViolationMessage))
@@ -644,7 +639,7 @@ public class FlowAnalyzerIT extends AbstractFlowAnalysisIT {
             public Collection<GroupAnalysisResult> analyzeProcessGroup(String ruleName, FlowAnalysisRuleContext context, VersionedProcessGroup processGroup, Function<String, VersionedControllerService> versionedControllerServiceProvider) {
                 Collection<GroupAnalysisResult> results = new ArrayList<>();
 
-                results.add(new GroupAnalysisResult(processGroupViolationMessage));
+                results.add(createGeneralGroupAnalysisResult(processGroupViolationMessage));
 
                 processGroup.getProcessors().stream()
                     .map(processor -> new GroupAnalysisResult(processor, processorViolationMessage))
@@ -706,7 +701,7 @@ public class FlowAnalyzerIT extends AbstractFlowAnalysisIT {
             public Collection<GroupAnalysisResult> analyzeProcessGroup(String ruleName, FlowAnalysisRuleContext context, VersionedProcessGroup processGroup, Function<String, VersionedControllerService> versionedControllerServiceProvider) {
                 Collection<GroupAnalysisResult> results = new ArrayList<>();
 
-                results.add(new GroupAnalysisResult(processGroupViolationMessage));
+                results.add(createGeneralGroupAnalysisResult(processGroupViolationMessage));
 
                 processGroup.getProcessors().stream()
                     .map(processor -> new GroupAnalysisResult(processor, processorViolationMessage))
@@ -1050,11 +1045,12 @@ public class FlowAnalyzerIT extends AbstractFlowAnalysisIT {
 
         assertEquals(ValidationStatus.INVALID, processorNode.getValidationStatus());
 
-        flowAnalysisContext.getRuleViolations()
-            .get(processorNode.getIdentifier())
-            .get(processorNode.getIdentifier())
-            .get(flowAnalysisRuleNode.getIdentifier())
-            .setEnabled(false);
+        flowAnalysisContext.updateRuleViolation(
+            processorNode.getIdentifier(),
+            processorNode.getIdentifier(),
+            flowAnalysisRuleNode.getIdentifier(),
+            false
+        );
 
         mainFlowAnalyzer.analyzeProcessor(processorNode);
         processorNode.performValidation();
@@ -1098,22 +1094,24 @@ public class FlowAnalyzerIT extends AbstractFlowAnalysisIT {
 
         assertEquals(ValidationStatus.INVALID, processorNode.getValidationStatus());
 
-        flowAnalysisContext.getRuleViolations()
-            .get(processorNode.getIdentifier())
-            .get(processorNode.getIdentifier())
-            .get(flowAnalysisRuleNode.getIdentifier())
-            .setEnabled(false);
+        flowAnalysisContext.updateRuleViolation(
+            processorNode.getIdentifier(),
+            processorNode.getIdentifier(),
+            flowAnalysisRuleNode.getIdentifier(),
+            false
+        );
 
         mainFlowAnalyzer.analyzeProcessor(processorNode);
         processorNode.performValidation();
 
         assertEquals(ValidationStatus.VALID, processorNode.getValidationStatus());
 
-        flowAnalysisContext.getRuleViolations()
-            .get(processorNode.getIdentifier())
-            .get(processorNode.getIdentifier())
-            .get(flowAnalysisRuleNode.getIdentifier())
-            .setEnabled(true);
+        flowAnalysisContext.updateRuleViolation(
+            processorNode.getIdentifier(),
+            processorNode.getIdentifier(),
+            flowAnalysisRuleNode.getIdentifier(),
+            true
+        );
 
         mainFlowAnalyzer.analyzeProcessor(processorNode);
         processorNode.performValidation();
@@ -1123,5 +1121,191 @@ public class FlowAnalyzerIT extends AbstractFlowAnalysisIT {
         Collection<ValidationResult> actual = processorNode.getValidationErrors();
 
         assertEquals(expected, actual);
+    }
+
+    @Test
+    public void testDisabledProcessorRuleViolationRemainsDisabledAfterNewAnalysis() throws Exception {
+        // GIVEN
+        String violationMessage = "Violation message";
+
+        ProcessorNode processorNode = createProcessorNode((context, session) -> {
+        });
+
+        FlowAnalysisRuleNode rule = createAndEnableFlowAnalysisRuleNode(new AbstractFlowAnalysisRule() {
+            @Override
+            public Optional<ComponentAnalysisResult> analyzeComponent(String ruleName, FlowAnalysisRuleContext context, Object component, Function<String, VersionedControllerService> versionedControllerServiceProvider) {
+                ComponentAnalysisResult result = new ComponentAnalysisResult(violationMessage);
+
+                return Optional.of(result);
+            }
+        });
+        rule.setRuleType(FlowAnalysisRuleType.POLICY);
+
+        RuleViolation expectedRuleViolation = new RuleViolation(
+            rule.getRuleType(),
+            processorNode.getIdentifier(),
+            processorNode.getIdentifier(),
+            rule.getIdentifier(),
+            violationMessage
+        );
+        expectedRuleViolation.setEnabled(false);
+
+        ConcurrentMap expected = new ConcurrentHashMap<String, ConcurrentMap<String, ConcurrentMap<String, RuleViolation>>>() {{
+            put(processorNode.getIdentifier(), new ConcurrentHashMap<String, ConcurrentMap<String, RuleViolation>>() {{
+                put(processorNode.getIdentifier(), new ConcurrentHashMap<String, RuleViolation>() {{
+                    put(rule.getIdentifier(), expectedRuleViolation);
+                }});
+            }});
+        }};
+
+        // WHEN
+        mainFlowAnalyzer.analyzeProcessor(processorNode);
+
+        flowAnalysisContext.updateRuleViolation(
+            processorNode.getIdentifier(),
+            processorNode.getIdentifier(),
+            rule.getIdentifier(),
+            false
+        );
+
+        mainFlowAnalyzer.analyzeProcessor(processorNode);
+
+        processorNode.performValidation();
+
+        // THEN
+        assertEquals(ValidationStatus.VALID, processorNode.getValidationStatus());
+
+        ConcurrentMap actual = flowAnalysisContext.getRuleViolations();
+
+        assertEquals(expected, actual);
+    }
+
+    @Test
+    public void testDisabledProcessorSpecificGroupScopedRuleViolationRemainsDisabledAfterNewAnalysis() throws Exception {
+        // GIVEN
+        String violationMessage = "Violation message";
+
+        ProcessGroup processGroup = createProcessGroup(getRootGroup());
+
+        ProcessorNode processorNode = createProcessorNode((context, session) -> {
+        });
+        processGroup.addProcessor(processorNode);
+
+        VersionedProcessGroup versionedProcessGroup = mapProcessGroup(processGroup);
+
+        FlowAnalysisRuleNode rule = createAndEnableFlowAnalysisRuleNode(new AbstractFlowAnalysisRule() {
+            @Override
+            public Collection<GroupAnalysisResult> analyzeProcessGroup(String ruleName, FlowAnalysisRuleContext context, VersionedProcessGroup processGroup, Function<String, VersionedControllerService> versionedControllerServiceProvider) {
+                Collection<GroupAnalysisResult> results = new ArrayList<>();
+
+                processGroup.getProcessors().stream()
+                    .map(processor -> new GroupAnalysisResult(processor, violationMessage))
+                    .forEach(results::add);
+
+                return results;
+            }
+        });
+        rule.setRuleType(FlowAnalysisRuleType.POLICY);
+
+        RuleViolation expectedRuleViolation = new RuleViolation(
+            rule.getRuleType(),
+            processorNode.getIdentifier(),
+            processGroup.getIdentifier(),
+            rule.getIdentifier(),
+            violationMessage
+        );
+        expectedRuleViolation.setEnabled(false);
+
+        ConcurrentMap expected = new ConcurrentHashMap<String, ConcurrentMap<String, ConcurrentMap<String, RuleViolation>>>() {{
+            put(processorNode.getIdentifier(), new ConcurrentHashMap<String, ConcurrentMap<String, RuleViolation>>() {{
+                put(processGroup.getIdentifier(), new ConcurrentHashMap<String, RuleViolation>() {{
+                    put(rule.getIdentifier(), expectedRuleViolation);
+                }});
+            }});
+        }};
+
+        // WHEN
+        mainFlowAnalyzer.analyzeProcessGroup(versionedProcessGroup);
+
+        flowAnalysisContext.updateRuleViolation(
+            processorNode.getIdentifier(),
+            processGroup.getIdentifier(),
+            rule.getIdentifier(),
+            false
+        );
+
+        mainFlowAnalyzer.analyzeProcessGroup(versionedProcessGroup);
+
+        processorNode.performValidation();
+
+        // THEN
+        assertEquals(ValidationStatus.VALID, processorNode.getValidationStatus());
+
+        ConcurrentMap actual = flowAnalysisContext.getRuleViolations();
+
+        assertEquals(expected, actual);
+    }
+
+    @Test
+    public void testDisabledGenericGroupScopedRuleViolationRemainsDisabledAfterNewAnalysis() throws Exception {
+        // GIVEN
+        String genericViolationSubjectId = "generic-process_group-violation";
+        String violationMessage = "Violation message";
+
+        ProcessGroup processGroup = createProcessGroup(getRootGroup());
+
+        VersionedProcessGroup versionedProcessGroup = mapProcessGroup(processGroup);
+
+        FlowAnalysisRuleNode rule = createAndEnableFlowAnalysisRuleNode(new AbstractFlowAnalysisRule() {
+            @Override
+            public Collection<GroupAnalysisResult> analyzeProcessGroup(String ruleName, FlowAnalysisRuleContext context, VersionedProcessGroup processGroup, Function<String, VersionedControllerService> versionedControllerServiceProvider) {
+                Collection<GroupAnalysisResult> results = new ArrayList<>();
+
+                results.add(new GroupAnalysisResult(genericViolationSubjectId, violationMessage));
+
+                return results;
+            }
+        });
+
+        RuleViolation expectedRuleViolation = new RuleViolation(
+            rule.getRuleType(),
+            genericViolationSubjectId,
+            processGroup.getIdentifier(),
+            rule.getIdentifier(),
+            violationMessage
+        );
+        expectedRuleViolation.setEnabled(false);
+
+        ConcurrentMap expected = new ConcurrentHashMap<String, ConcurrentMap<String, ConcurrentMap<String, RuleViolation>>>() {{
+            put(genericViolationSubjectId, new ConcurrentHashMap<String, ConcurrentMap<String, RuleViolation>>() {{
+                put(processGroup.getIdentifier(), new ConcurrentHashMap<String, RuleViolation>() {{
+                    put(rule.getIdentifier(), expectedRuleViolation);
+                }});
+            }});
+        }};
+
+        // WHEN
+        mainFlowAnalyzer.analyzeProcessGroup(versionedProcessGroup);
+
+        flowAnalysisContext.updateRuleViolation(
+            genericViolationSubjectId,
+            processGroup.getIdentifier(),
+            rule.getIdentifier(),
+            false
+        );
+
+        mainFlowAnalyzer.analyzeProcessGroup(versionedProcessGroup);
+
+        // THEN
+        ConcurrentMap actual = flowAnalysisContext.getRuleViolations();
+
+        assertEquals(expected, actual);
+    }
+
+    private GroupAnalysisResult createGeneralGroupAnalysisResult(String processGroupViolationMessage) {
+        return new GroupAnalysisResult(
+            "processGroupViolation_" + processGroupViolationCounter.getAndIncrement(),
+            processGroupViolationMessage
+        );
     }
 }
