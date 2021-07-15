@@ -4015,7 +4015,7 @@ public class StandardNiFiServiceFacade implements NiFiServiceFacade {
             }
         }
         controllerBulletinsEntity.setReportingTaskBulletins(reportingTaskBulletinEntities);
-        
+
         // get the flow analysis rule bulletins
         final BulletinQuery flowAnalysisRuleQuery = new BulletinQuery.Builder().sourceType(ComponentType.FLOW_ANALYSIS_RULE).build();
         final List<Bulletin> allFlowAnalysisRuleBulletins = bulletinRepository.findBulletins(flowAnalysisRuleQuery);

@@ -54,7 +54,12 @@ public class FlowAnalysisRuleEndpointMerger extends AbstractSingleEntityEndpoint
     }
 
     @Override
-    protected void mergeResponses(FlowAnalysisRuleEntity clientEntity, Map<NodeIdentifier, FlowAnalysisRuleEntity> entityMap, Set<NodeResponse> successfulResponses, Set<NodeResponse> problematicResponses) {
+    protected void mergeResponses(
+        FlowAnalysisRuleEntity clientEntity,
+        Map<NodeIdentifier, FlowAnalysisRuleEntity> entityMap,
+        Set<NodeResponse> successfulResponses,
+        Set<NodeResponse> problematicResponses
+    ) {
         flowAnalysisRuleEntityMerger.merge(clientEntity, entityMap);
     }
 }

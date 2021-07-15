@@ -42,7 +42,6 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import java.util.concurrent.RejectedExecutionException;
 
 public class StandardFlowAnalysisRuleDAO extends ComponentDAO implements FlowAnalysisRuleDAO {
 

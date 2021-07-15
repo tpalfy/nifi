@@ -1,3 +1,19 @@
+/*
+ * Licensed to the Apache Software Foundation (ASF) under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.
+ * The ASF licenses this file to You under the Apache License, Version 2.0
+ * (the "License"); you may not use this file except in compliance with
+ * the License.  You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 package org.apache.nifi.analyzeflow;
 
 import org.apache.nifi.components.ValidationResult;
@@ -30,7 +46,6 @@ import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Function;
 
 import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
 
 public class FlowAnalyzerIT extends AbstractFlowAnalysisIT {
     private MainFlowAnalyzer mainFlowAnalyzer;
@@ -94,7 +109,12 @@ public class FlowAnalyzerIT extends AbstractFlowAnalysisIT {
 
         FlowAnalysisRuleNode flowAnalysisRuleNode = createAndEnableFlowAnalysisRuleNode(new AbstractFlowAnalysisRule() {
             @Override
-            public Optional<ComponentAnalysisResult> analyzeComponent(String ruleName, FlowAnalysisRuleContext context, Object component, Function<String, VersionedControllerService> versionedControllerServiceProvider) {
+            public Optional<ComponentAnalysisResult> analyzeComponent(
+                String ruleName,
+                FlowAnalysisRuleContext context,
+                Object component,
+                Function<String, VersionedControllerService> versionedControllerServiceProvider
+            ) {
                 ComponentAnalysisResult componentAnalysisResult = new ComponentAnalysisResult("Unreported violation message");
 
                 return Optional.of(componentAnalysisResult);
@@ -123,7 +143,12 @@ public class FlowAnalyzerIT extends AbstractFlowAnalysisIT {
 
         FlowAnalysisRuleNode flowAnalysisRuleNode = createAndEnableFlowAnalysisRuleNode(new AbstractFlowAnalysisRule() {
             @Override
-            public Optional<ComponentAnalysisResult> analyzeComponent(String ruleName, FlowAnalysisRuleContext context, Object component, Function<String, VersionedControllerService> versionedControllerServiceProvider) {
+            public Optional<ComponentAnalysisResult> analyzeComponent(
+                String ruleName,
+                FlowAnalysisRuleContext context,
+                Object component,
+                Function<String, VersionedControllerService> versionedControllerServiceProvider
+            ) {
                 ComponentAnalysisResult componentAnalysisResult = new ComponentAnalysisResult(violationMessage);
 
                 return Optional.of(componentAnalysisResult);
@@ -166,7 +191,12 @@ public class FlowAnalyzerIT extends AbstractFlowAnalysisIT {
 
         FlowAnalysisRuleNode flowAnalysisRuleNode = createAndEnableFlowAnalysisRuleNode(new AbstractFlowAnalysisRule() {
             @Override
-            public Optional<ComponentAnalysisResult> analyzeComponent(String ruleName, FlowAnalysisRuleContext context, Object component, Function<String, VersionedControllerService> versionedControllerServiceProvider) {
+            public Optional<ComponentAnalysisResult> analyzeComponent(
+                String ruleName,
+                FlowAnalysisRuleContext context,
+                Object component,
+                Function<String, VersionedControllerService> versionedControllerServiceProvider
+            ) {
                 ComponentAnalysisResult componentAnalysisResult = new ComponentAnalysisResult(violationMessageHolder.get());
 
                 return Optional.of(componentAnalysisResult);
@@ -210,7 +240,12 @@ public class FlowAnalyzerIT extends AbstractFlowAnalysisIT {
 
         FlowAnalysisRuleNode flowAnalysisRuleNode = createAndEnableFlowAnalysisRuleNode(new AbstractFlowAnalysisRule() {
             @Override
-            public Optional<ComponentAnalysisResult> analyzeComponent(String ruleName, FlowAnalysisRuleContext context, Object component, Function<String, VersionedControllerService> versionedControllerServiceProvider) {
+            public Optional<ComponentAnalysisResult> analyzeComponent(
+                String ruleName,
+                FlowAnalysisRuleContext context,
+                Object component,
+                Function<String, VersionedControllerService> versionedControllerServiceProvider
+            ) {
                 String violationMessage = violationMessageHolder.get();
 
                 if (violationMessage == null) {
@@ -246,7 +281,12 @@ public class FlowAnalyzerIT extends AbstractFlowAnalysisIT {
 
         FlowAnalysisRuleNode flowAnalysisRuleNode = createAndEnableFlowAnalysisRuleNode(new AbstractFlowAnalysisRule() {
             @Override
-            public Optional<ComponentAnalysisResult> analyzeComponent(String ruleName, FlowAnalysisRuleContext context, Object component, Function<String, VersionedControllerService> versionedControllerServiceProvider) {
+            public Optional<ComponentAnalysisResult> analyzeComponent(
+                String ruleName,
+                FlowAnalysisRuleContext context,
+                Object component,
+                Function<String, VersionedControllerService> versionedControllerServiceProvider
+            ) {
                 ComponentAnalysisResult componentAnalysisResult = new ComponentAnalysisResult(violationMessage);
 
                 return Optional.of(componentAnalysisResult);
@@ -297,7 +337,12 @@ public class FlowAnalyzerIT extends AbstractFlowAnalysisIT {
 
         FlowAnalysisRuleNode flowAnalysisRuleNode = createAndEnableFlowAnalysisRuleNode(new AbstractFlowAnalysisRule() {
             @Override
-            public Optional<ComponentAnalysisResult> analyzeComponent(String ruleName, FlowAnalysisRuleContext context, Object component, Function<String, VersionedControllerService> versionedControllerServiceProvider) {
+            public Optional<ComponentAnalysisResult> analyzeComponent(
+                String ruleName,
+                FlowAnalysisRuleContext context,
+                Object component,
+                Function<String, VersionedControllerService> versionedControllerServiceProvider
+            ) {
                 ComponentAnalysisResult componentAnalysisResult = new ComponentAnalysisResult(violationMessage);
 
                 return Optional.of(componentAnalysisResult);
@@ -350,7 +395,12 @@ public class FlowAnalyzerIT extends AbstractFlowAnalysisIT {
 
         FlowAnalysisRuleNode rule = createAndEnableFlowAnalysisRuleNode(new AbstractFlowAnalysisRule() {
             @Override
-            public Collection<GroupAnalysisResult> analyzeProcessGroup(String ruleName, FlowAnalysisRuleContext context, VersionedProcessGroup processGroup, Function<String, VersionedControllerService> versionedControllerServiceProvider) {
+            public Collection<GroupAnalysisResult> analyzeProcessGroup(
+                String ruleName,
+                FlowAnalysisRuleContext context,
+                VersionedProcessGroup processGroup,
+                Function<String, VersionedControllerService> versionedControllerServiceProvider
+            ) {
                 Collection<GroupAnalysisResult> results = new ArrayList<>();
 
                 results.add(createGeneralGroupAnalysisResult(violationMessage));
@@ -382,7 +432,12 @@ public class FlowAnalyzerIT extends AbstractFlowAnalysisIT {
 
         FlowAnalysisRuleNode rule = createAndEnableFlowAnalysisRuleNode(new AbstractFlowAnalysisRule() {
             @Override
-            public Collection<GroupAnalysisResult> analyzeProcessGroup(String ruleName, FlowAnalysisRuleContext context, VersionedProcessGroup processGroup, Function<String, VersionedControllerService> versionedControllerServiceProvider) {
+            public Collection<GroupAnalysisResult> analyzeProcessGroup(
+                String ruleName,
+                FlowAnalysisRuleContext context,
+                VersionedProcessGroup processGroup,
+                Function<String, VersionedControllerService> versionedControllerServiceProvider
+            ) {
                 Collection<GroupAnalysisResult> results = new ArrayList<>();
 
                 results.add(createGeneralGroupAnalysisResult(violationMessage));
@@ -428,7 +483,12 @@ public class FlowAnalyzerIT extends AbstractFlowAnalysisIT {
 
         FlowAnalysisRuleNode rule = createAndEnableFlowAnalysisRuleNode(new AbstractFlowAnalysisRule() {
             @Override
-            public Collection<GroupAnalysisResult> analyzeProcessGroup(String ruleName, FlowAnalysisRuleContext context, VersionedProcessGroup processGroup, Function<String, VersionedControllerService> versionedControllerServiceProvider) {
+            public Collection<GroupAnalysisResult> analyzeProcessGroup(
+                String ruleName,
+                FlowAnalysisRuleContext context,
+                VersionedProcessGroup processGroup,
+                Function<String, VersionedControllerService> versionedControllerServiceProvider
+            ) {
                 Collection<GroupAnalysisResult> results = new ArrayList<>();
 
                 results.add(createGeneralGroupAnalysisResult(processGroupViolationMessage));
@@ -489,7 +549,12 @@ public class FlowAnalyzerIT extends AbstractFlowAnalysisIT {
 
         FlowAnalysisRuleNode processGroupAnalyzerRule = createAndEnableFlowAnalysisRuleNode(new AbstractFlowAnalysisRule() {
             @Override
-            public Collection<GroupAnalysisResult> analyzeProcessGroup(String ruleName, FlowAnalysisRuleContext context, VersionedProcessGroup processGroup, Function<String, VersionedControllerService> versionedControllerServiceProvider) {
+            public Collection<GroupAnalysisResult> analyzeProcessGroup(
+                String ruleName,
+                FlowAnalysisRuleContext context,
+                VersionedProcessGroup processGroup,
+                Function<String, VersionedControllerService> versionedControllerServiceProvider
+            ) {
                 Collection<GroupAnalysisResult> results = new ArrayList<>();
 
                 results.add(createGeneralGroupAnalysisResult(processGroupViolationMessage));
@@ -500,7 +565,12 @@ public class FlowAnalyzerIT extends AbstractFlowAnalysisIT {
 
         FlowAnalysisRuleNode processorAnalyzerRule = createAndEnableFlowAnalysisRuleNode(new AbstractFlowAnalysisRule() {
             @Override
-            public Optional<ComponentAnalysisResult> analyzeComponent(String ruleName, FlowAnalysisRuleContext context, Object component, Function<String, VersionedControllerService> versionedControllerServiceProvider) {
+            public Optional<ComponentAnalysisResult> analyzeComponent(
+                String ruleName,
+                FlowAnalysisRuleContext context,
+                Object component,
+                Function<String, VersionedControllerService> versionedControllerServiceProvider
+            ) {
                 ComponentAnalysisResult componentAnalysisResult = new ComponentAnalysisResult(processorViolationMessage);
 
                 return Optional.of(componentAnalysisResult);
@@ -556,7 +626,12 @@ public class FlowAnalyzerIT extends AbstractFlowAnalysisIT {
 
         FlowAnalysisRuleNode processGroupAnalyzerRule = createAndEnableFlowAnalysisRuleNode(new AbstractFlowAnalysisRule() {
             @Override
-            public Collection<GroupAnalysisResult> analyzeProcessGroup(String ruleName, FlowAnalysisRuleContext context, VersionedProcessGroup processGroup, Function<String, VersionedControllerService> versionedControllerServiceProvider) {
+            public Collection<GroupAnalysisResult> analyzeProcessGroup(
+                String ruleName,
+                FlowAnalysisRuleContext context,
+                VersionedProcessGroup processGroup,
+                Function<String, VersionedControllerService> versionedControllerServiceProvider
+            ) {
                 Collection<GroupAnalysisResult> results = new ArrayList<>();
 
                 results.add(createGeneralGroupAnalysisResult(processGroupViolationMessage));
@@ -571,7 +646,12 @@ public class FlowAnalyzerIT extends AbstractFlowAnalysisIT {
 
         FlowAnalysisRuleNode processorAnalyzerRule = createAndEnableFlowAnalysisRuleNode(new AbstractFlowAnalysisRule() {
             @Override
-            public Optional<ComponentAnalysisResult> analyzeComponent(String ruleName, FlowAnalysisRuleContext context, Object component, Function<String, VersionedControllerService> versionedControllerServiceProvider) {
+            public Optional<ComponentAnalysisResult> analyzeComponent(
+                String ruleName,
+                FlowAnalysisRuleContext context,
+                Object component,
+                Function<String, VersionedControllerService> versionedControllerServiceProvider
+            ) {
                 ComponentAnalysisResult componentAnalysisResult = new ComponentAnalysisResult(processorViolationMessage);
 
                 return Optional.of(componentAnalysisResult);
@@ -636,7 +716,12 @@ public class FlowAnalyzerIT extends AbstractFlowAnalysisIT {
 
         FlowAnalysisRuleNode processGroupAnalyzerRule = createAndEnableFlowAnalysisRuleNode(new AbstractFlowAnalysisRule() {
             @Override
-            public Collection<GroupAnalysisResult> analyzeProcessGroup(String ruleName, FlowAnalysisRuleContext context, VersionedProcessGroup processGroup, Function<String, VersionedControllerService> versionedControllerServiceProvider) {
+            public Collection<GroupAnalysisResult> analyzeProcessGroup(
+                String ruleName,
+                FlowAnalysisRuleContext context,
+                VersionedProcessGroup processGroup,
+                Function<String, VersionedControllerService> versionedControllerServiceProvider
+            ) {
                 Collection<GroupAnalysisResult> results = new ArrayList<>();
 
                 results.add(createGeneralGroupAnalysisResult(processGroupViolationMessage));
@@ -651,7 +736,12 @@ public class FlowAnalyzerIT extends AbstractFlowAnalysisIT {
 
         FlowAnalysisRuleNode processorAnalyzerRule = createAndEnableFlowAnalysisRuleNode(new AbstractFlowAnalysisRule() {
             @Override
-            public Optional<ComponentAnalysisResult> analyzeComponent(String ruleName, FlowAnalysisRuleContext context, Object component, Function<String, VersionedControllerService> versionedControllerServiceProvider) {
+            public Optional<ComponentAnalysisResult> analyzeComponent(
+                String ruleName,
+                FlowAnalysisRuleContext context,
+                Object component,
+                Function<String, VersionedControllerService> versionedControllerServiceProvider
+            ) {
                 ComponentAnalysisResult componentAnalysisResult = new ComponentAnalysisResult(processorViolationMessage);
 
                 return Optional.of(componentAnalysisResult);
@@ -698,7 +788,12 @@ public class FlowAnalyzerIT extends AbstractFlowAnalysisIT {
 
         FlowAnalysisRuleNode processGroupAnalyzerRule = createAndEnableFlowAnalysisRuleNode(new AbstractFlowAnalysisRule() {
             @Override
-            public Collection<GroupAnalysisResult> analyzeProcessGroup(String ruleName, FlowAnalysisRuleContext context, VersionedProcessGroup processGroup, Function<String, VersionedControllerService> versionedControllerServiceProvider) {
+            public Collection<GroupAnalysisResult> analyzeProcessGroup(
+                String ruleName,
+                FlowAnalysisRuleContext context,
+                VersionedProcessGroup processGroup,
+                Function<String, VersionedControllerService> versionedControllerServiceProvider
+            ) {
                 Collection<GroupAnalysisResult> results = new ArrayList<>();
 
                 results.add(createGeneralGroupAnalysisResult(processGroupViolationMessage));
@@ -713,7 +808,12 @@ public class FlowAnalyzerIT extends AbstractFlowAnalysisIT {
 
         FlowAnalysisRuleNode processorAnalyzerRule = createAndEnableFlowAnalysisRuleNode(new AbstractFlowAnalysisRule() {
             @Override
-            public Optional<ComponentAnalysisResult> analyzeComponent(String ruleName, FlowAnalysisRuleContext context, Object component, Function<String, VersionedControllerService> versionedControllerServiceProvider) {
+            public Optional<ComponentAnalysisResult> analyzeComponent(
+                String ruleName,
+                FlowAnalysisRuleContext context,
+                Object component,
+                Function<String, VersionedControllerService> versionedControllerServiceProvider
+            ) {
                 ComponentAnalysisResult componentAnalysisResult = new ComponentAnalysisResult(processorViolationMessage);
 
                 return Optional.of(componentAnalysisResult);
@@ -772,7 +872,12 @@ public class FlowAnalyzerIT extends AbstractFlowAnalysisIT {
 
         FlowAnalysisRuleNode rule = createAndEnableFlowAnalysisRuleNode(new AbstractFlowAnalysisRule() {
             @Override
-            public Collection<GroupAnalysisResult> analyzeProcessGroup(String ruleName, FlowAnalysisRuleContext context, VersionedProcessGroup processGroup, Function<String, VersionedControllerService> versionedControllerServiceProvider) {
+            public Collection<GroupAnalysisResult> analyzeProcessGroup(
+                String ruleName,
+                FlowAnalysisRuleContext context,
+                VersionedProcessGroup processGroup,
+                Function<String, VersionedControllerService> versionedControllerServiceProvider
+            ) {
                 Collection<GroupAnalysisResult> results = new ArrayList<>();
 
                 processGroup.getProcessors().stream()
@@ -838,7 +943,12 @@ public class FlowAnalyzerIT extends AbstractFlowAnalysisIT {
 
         FlowAnalysisRuleNode rule = createAndEnableFlowAnalysisRuleNode(new AbstractFlowAnalysisRule() {
             @Override
-            public Collection<GroupAnalysisResult> analyzeProcessGroup(String ruleName, FlowAnalysisRuleContext context, VersionedProcessGroup processGroup, Function<String, VersionedControllerService> versionedControllerServiceProvider) {
+            public Collection<GroupAnalysisResult> analyzeProcessGroup(
+                String ruleName,
+                FlowAnalysisRuleContext context,
+                VersionedProcessGroup processGroup,
+                Function<String, VersionedControllerService> versionedControllerServiceProvider
+            ) {
                 Collection<GroupAnalysisResult> results = new ArrayList<>();
 
                 if (processGroup.getIdentifier().equals(versionedProcessGroup.getIdentifier())) {
@@ -890,7 +1000,12 @@ public class FlowAnalyzerIT extends AbstractFlowAnalysisIT {
 
         FlowAnalysisRuleNode flowAnalysisRuleNode = createAndEnableFlowAnalysisRuleNode(new AbstractFlowAnalysisRule() {
             @Override
-            public Optional<ComponentAnalysisResult> analyzeComponent(String ruleName, FlowAnalysisRuleContext context, Object component, Function<String, VersionedControllerService> versionedControllerServiceProvider) {
+            public Optional<ComponentAnalysisResult> analyzeComponent(
+                String ruleName,
+                FlowAnalysisRuleContext context,
+                Object component,
+                Function<String, VersionedControllerService> versionedControllerServiceProvider
+            ) {
                 ComponentAnalysisResult componentAnalysisResult = new ComponentAnalysisResult(violationMessage);
 
                 return Optional.of(componentAnalysisResult);
@@ -920,7 +1035,12 @@ public class FlowAnalyzerIT extends AbstractFlowAnalysisIT {
 
         FlowAnalysisRuleNode flowAnalysisRuleNode = createAndEnableFlowAnalysisRuleNode(new AbstractFlowAnalysisRule() {
             @Override
-            public Optional<ComponentAnalysisResult> analyzeComponent(String ruleName, FlowAnalysisRuleContext context, Object component, Function<String, VersionedControllerService> versionedControllerServiceProvider) {
+            public Optional<ComponentAnalysisResult> analyzeComponent(
+                String ruleName,
+                FlowAnalysisRuleContext context,
+                Object component,
+                Function<String, VersionedControllerService> versionedControllerServiceProvider
+            ) {
                 ComponentAnalysisResult componentAnalysisResult = new ComponentAnalysisResult(violationMessage);
 
                 return Optional.of(componentAnalysisResult);
@@ -955,7 +1075,12 @@ public class FlowAnalyzerIT extends AbstractFlowAnalysisIT {
 
         FlowAnalysisRuleNode flowAnalysisRuleNode = createAndEnableFlowAnalysisRuleNode(new AbstractFlowAnalysisRule() {
             @Override
-            public Optional<ComponentAnalysisResult> analyzeComponent(String ruleName, FlowAnalysisRuleContext context, Object component, Function<String, VersionedControllerService> versionedControllerServiceProvider) {
+            public Optional<ComponentAnalysisResult> analyzeComponent(
+                String ruleName,
+                FlowAnalysisRuleContext context,
+                Object component,
+                Function<String, VersionedControllerService> versionedControllerServiceProvider
+            ) {
                 ComponentAnalysisResult componentAnalysisResult = new ComponentAnalysisResult(violationMessage);
 
                 return Optional.of(componentAnalysisResult);
@@ -991,7 +1116,12 @@ public class FlowAnalyzerIT extends AbstractFlowAnalysisIT {
 
         FlowAnalysisRuleNode flowAnalysisRuleNode = createAndEnableFlowAnalysisRuleNode(new AbstractFlowAnalysisRule() {
             @Override
-            public Optional<ComponentAnalysisResult> analyzeComponent(String ruleName, FlowAnalysisRuleContext context, Object component, Function<String, VersionedControllerService> versionedControllerServiceProvider) {
+            public Optional<ComponentAnalysisResult> analyzeComponent(
+                String ruleName,
+                FlowAnalysisRuleContext context,
+                Object component,
+                Function<String, VersionedControllerService> versionedControllerServiceProvider
+            ) {
                 ComponentAnalysisResult componentAnalysisResult = new ComponentAnalysisResult(violationMessage);
 
                 return Optional.of(componentAnalysisResult);
@@ -1029,7 +1159,12 @@ public class FlowAnalyzerIT extends AbstractFlowAnalysisIT {
 
         FlowAnalysisRuleNode flowAnalysisRuleNode = createAndEnableFlowAnalysisRuleNode(new AbstractFlowAnalysisRule() {
             @Override
-            public Optional<ComponentAnalysisResult> analyzeComponent(String ruleName, FlowAnalysisRuleContext context, Object component, Function<String, VersionedControllerService> versionedControllerServiceProvider) {
+            public Optional<ComponentAnalysisResult> analyzeComponent(
+                String ruleName,
+                FlowAnalysisRuleContext context,
+                Object component,
+                Function<String, VersionedControllerService> versionedControllerServiceProvider
+            ) {
                 ComponentAnalysisResult componentAnalysisResult = new ComponentAnalysisResult(violationMessage);
 
                 return Optional.of(componentAnalysisResult);
@@ -1072,7 +1207,12 @@ public class FlowAnalyzerIT extends AbstractFlowAnalysisIT {
 
         FlowAnalysisRuleNode flowAnalysisRuleNode = createAndEnableFlowAnalysisRuleNode(new AbstractFlowAnalysisRule() {
             @Override
-            public Optional<ComponentAnalysisResult> analyzeComponent(String ruleName, FlowAnalysisRuleContext context, Object component, Function<String, VersionedControllerService> versionedControllerServiceProvider) {
+            public Optional<ComponentAnalysisResult> analyzeComponent(
+                String ruleName,
+                FlowAnalysisRuleContext context,
+                Object component,
+                Function<String, VersionedControllerService> versionedControllerServiceProvider
+            ) {
                 ComponentAnalysisResult componentAnalysisResult = new ComponentAnalysisResult(violationMessage);
 
                 return Optional.of(componentAnalysisResult);
@@ -1133,7 +1273,12 @@ public class FlowAnalyzerIT extends AbstractFlowAnalysisIT {
 
         FlowAnalysisRuleNode rule = createAndEnableFlowAnalysisRuleNode(new AbstractFlowAnalysisRule() {
             @Override
-            public Optional<ComponentAnalysisResult> analyzeComponent(String ruleName, FlowAnalysisRuleContext context, Object component, Function<String, VersionedControllerService> versionedControllerServiceProvider) {
+            public Optional<ComponentAnalysisResult> analyzeComponent(
+                String ruleName,
+                FlowAnalysisRuleContext context,
+                Object component,
+                Function<String, VersionedControllerService> versionedControllerServiceProvider
+            ) {
                 ComponentAnalysisResult result = new ComponentAnalysisResult(violationMessage);
 
                 return Optional.of(result);
@@ -1195,7 +1340,12 @@ public class FlowAnalyzerIT extends AbstractFlowAnalysisIT {
 
         FlowAnalysisRuleNode rule = createAndEnableFlowAnalysisRuleNode(new AbstractFlowAnalysisRule() {
             @Override
-            public Collection<GroupAnalysisResult> analyzeProcessGroup(String ruleName, FlowAnalysisRuleContext context, VersionedProcessGroup processGroup, Function<String, VersionedControllerService> versionedControllerServiceProvider) {
+            public Collection<GroupAnalysisResult> analyzeProcessGroup(
+                String ruleName,
+                FlowAnalysisRuleContext context,
+                VersionedProcessGroup processGroup,
+                Function<String, VersionedControllerService> versionedControllerServiceProvider
+            ) {
                 Collection<GroupAnalysisResult> results = new ArrayList<>();
 
                 processGroup.getProcessors().stream()
@@ -1258,7 +1408,12 @@ public class FlowAnalyzerIT extends AbstractFlowAnalysisIT {
 
         FlowAnalysisRuleNode rule = createAndEnableFlowAnalysisRuleNode(new AbstractFlowAnalysisRule() {
             @Override
-            public Collection<GroupAnalysisResult> analyzeProcessGroup(String ruleName, FlowAnalysisRuleContext context, VersionedProcessGroup processGroup, Function<String, VersionedControllerService> versionedControllerServiceProvider) {
+            public Collection<GroupAnalysisResult> analyzeProcessGroup(
+                String ruleName,
+                FlowAnalysisRuleContext context,
+                VersionedProcessGroup processGroup,
+                Function<String, VersionedControllerService> versionedControllerServiceProvider
+            ) {
                 Collection<GroupAnalysisResult> results = new ArrayList<>();
 
                 results.add(new GroupAnalysisResult(genericViolationSubjectId, violationMessage));
