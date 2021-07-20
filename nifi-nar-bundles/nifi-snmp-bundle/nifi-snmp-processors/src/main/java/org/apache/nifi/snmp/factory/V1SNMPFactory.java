@@ -19,18 +19,12 @@ package org.apache.nifi.snmp.factory;
 import org.apache.nifi.snmp.configuration.SNMPConfiguration;
 import org.snmp4j.Snmp;
 import org.snmp4j.Target;
-import org.snmp4j.mp.SnmpConstants;
 
 public class V1SNMPFactory extends AbstractSNMPFactory implements SNMPFactory {
 
     @Override
-    public boolean supports(final int version) {
-        return SnmpConstants.version1 == version;
-    }
-
-    @Override
     public Snmp createSnmpManagerInstance(final SNMPConfiguration configuration) {
-        return createSnmpClient();
+        return createSimpleSnmpManager(configuration);
     }
 
     @Override

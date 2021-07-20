@@ -20,51 +20,40 @@ import org.apache.nifi.snmp.configuration.SNMPConfiguration;
 import org.apache.nifi.snmp.exception.InvalidSnmpVersionException;
 import org.snmp4j.Snmp;
 import org.snmp4j.Target;
+import org.snmp4j.mp.SnmpConstants;
 
-import java.util.Arrays;
 import java.util.Collections;
-import java.util.List;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.Optional;
 
 public class CompositeSNMPFactory implements SNMPFactory {
 
     private static final String INVALID_SNMP_VERSION = "SNMP version is not supported.";
-    private static final List<SNMPFactory> FACTORIES;
+    private static final Map<Integer, SNMPFactory> FACTORIES;
 
     static {
-        final List<SNMPFactory> factories = Arrays.asList(new V1SNMPFactory(), new V2cSNMPFactory(), new V3SNMPFactory());
-        FACTORIES = Collections.unmodifiableList(factories);
-    }
-
-    @Override
-    public boolean supports(final int version) {
-        return !getMatchingFactory(version).isPresent();
+        final Map<Integer, SNMPFactory> factories = new HashMap<>();
+        factories.put(SnmpConstants.version1, new V1SNMPFactory());
+        factories.put(SnmpConstants.version2c, new V2cSNMPFactory());
+        factories.put(SnmpConstants.version3, new V3SNMPFactory());
+        FACTORIES = Collections.unmodifiableMap(factories);
     }
 
     @Override
     public Snmp createSnmpManagerInstance(final SNMPConfiguration configuration) {
-        final Optional<SNMPFactory> factory = getMatchingFactory(configuration.getVersion());
-        if (!factory.isPresent()) {
-            throw new InvalidSnmpVersionException(INVALID_SNMP_VERSION);
-        }
-        return factory.get().createSnmpManagerInstance(configuration);
+        final SNMPFactory factory = getMatchingFactory(configuration.getVersion());
+        return factory.createSnmpManagerInstance(configuration);
     }
 
     @Override
-    public Target createTargetInstance(final SNMPConfiguration configuration) {
-        final Optional<SNMPFactory> factory = getMatchingFactory(configuration.getVersion());
-        if (!factory.isPresent()) {
-            throw new InvalidSnmpVersionException(INVALID_SNMP_VERSION);
-        }
-        return factory.get().createTargetInstance(configuration);
+    public Target createTargetInstance(SNMPConfiguration configuration) {
+        final SNMPFactory factory = getMatchingFactory(configuration.getVersion());
+        return factory.createTargetInstance(configuration);
     }
 
-    private Optional<SNMPFactory> getMatchingFactory(final int version) {
-        for (final SNMPFactory factory : FACTORIES) {
-            if (factory.supports(version)) {
-                return Optional.of(factory);
-            }
-        }
-        return Optional.empty();
+    private SNMPFactory getMatchingFactory(final int version) {
+        return Optional.ofNullable(FACTORIES.get(version))
+                .orElseThrow(() -> new InvalidSnmpVersionException(INVALID_SNMP_VERSION));
     }
 }

@@ -14,35 +14,31 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.apache.nifi.snmp.helper;
+package org.apache.nifi.snmp.helper.testrunners;
 
 import org.apache.nifi.snmp.exception.InvalidSnmpVersionException;
-import org.apache.nifi.util.MockFlowFile;
 import org.snmp4j.mp.SnmpConstants;
 
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Optional;
 
-import static org.apache.nifi.snmp.utils.SNMPUtils.SNMP_PROP_PREFIX;
+public class SNMPTestRunnerFactory {
 
-public class SNMPTestUtils {
+    private static final Map<Integer, SNMPTestRunners> snmpTestRunnerMap;
 
-    public static String getVersionByInt(int version) {
-        if (SnmpConstants.version1 == version) {
-            return "SNMPv1";
-        } else if (SnmpConstants.version2c == version) {
-            return "SNMPv2c";
-        } else if (SnmpConstants.version3 == version) {
-            return "SNMPv3";
-        }
-        throw new InvalidSnmpVersionException("Invalid version");
+    static {
+        final Map<Integer, SNMPTestRunners> testRunners = new HashMap<>();
+        testRunners.put(SnmpConstants.version1, new SNMPV1TestRunners());
+        testRunners.put(SnmpConstants.version2c, new SNMPV2cTestRunners());
+        testRunners.put(SnmpConstants.version3, new SNMPV3TestRunners());
+        snmpTestRunnerMap = Collections.unmodifiableMap(testRunners);
     }
 
-    public static MockFlowFile getFlowFile(String oid, String oidValue) {
-        final MockFlowFile flowFile = new MockFlowFile(1L);
-        final Map<String, String> attributes = new HashMap<>();
-        attributes.put(SNMP_PROP_PREFIX + oid, oidValue);
-        flowFile.putAttributes(attributes);
-        return flowFile;
+    public static SNMPTestRunners getTestRunners(final int version) {
+        return Optional.ofNullable(snmpTestRunnerMap.get(version))
+                .orElseThrow(() -> new InvalidSnmpVersionException("Invalid SNMP version while create SNMPTestRunnerFactory."));
     }
+
 }

@@ -29,7 +29,6 @@ import org.apache.nifi.processor.Relationship;
 import org.apache.nifi.processor.util.StandardValidators;
 import org.apache.nifi.reporting.InitializationException;
 import org.apache.nifi.snmp.configuration.SNMPConfiguration;
-import org.apache.nifi.snmp.configuration.SNMPConfigurationBuilder;
 import org.apache.nifi.snmp.dto.SNMPSingleResponse;
 import org.apache.nifi.snmp.dto.SNMPValue;
 import org.apache.nifi.snmp.exception.SNMPException;
@@ -228,10 +227,12 @@ abstract class AbstractSNMPProcessor extends AbstractProcessor {
     public void initSnmpManager(final ProcessContext context) throws InitializationException {
         final int version = SNMPUtils.getVersion(context.getProperty(SNMP_VERSION).getValue());
         final SNMPConfiguration configuration;
+        final String targetHost = getTargetHost(context);
+        final String targetPort = getTargetPort(context);
         try {
-            configuration = new SNMPConfigurationBuilder()
-                    .setAgentHost(context.getProperty(AGENT_HOST).getValue())
-                    .setAgentPort(context.getProperty(AGENT_PORT).toString())
+            configuration = SNMPConfiguration.builder()
+                    .setTargetHost(targetHost)
+                    .setTargetPort(targetPort)
                     .setRetries(context.getProperty(SNMP_RETRIES).asInteger())
                     .setTimeout(context.getProperty(SNMP_TIMEOUT).asInteger())
                     .setVersion(version)
@@ -311,4 +312,8 @@ abstract class AbstractSNMPProcessor extends AbstractProcessor {
             }
         }
     }
+
+    protected abstract String getTargetHost(ProcessContext processContext);
+
+    protected abstract String getTargetPort(ProcessContext processContext);
 }

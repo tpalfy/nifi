@@ -21,7 +21,6 @@ import org.apache.nifi.snmp.utils.SNMPUtils;
 import org.snmp4j.Snmp;
 import org.snmp4j.Target;
 import org.snmp4j.mp.MPv3;
-import org.snmp4j.mp.SnmpConstants;
 import org.snmp4j.security.SecurityModels;
 import org.snmp4j.security.SecurityProtocols;
 import org.snmp4j.security.USM;
@@ -34,39 +33,35 @@ import java.util.Optional;
 public class V3SNMPFactory extends AbstractSNMPFactory implements SNMPFactory {
 
     @Override
-    public boolean supports(final int version) {
-        return SnmpConstants.version3 == version;
-    }
-
-    @Override
     public Snmp createSnmpManagerInstance(final SNMPConfiguration configuration) {
-        final Snmp snmp = createSnmpClient();
+        final Snmp snmpManager = createSimpleSnmpManager(configuration);
 
-        // If there's a USM instance associated with the MPv3 bound to this Snmp instance (like an agent running
-        // on the same host) it is not null.
-        if (snmp.getUSM() == null) {
-            final OctetString localEngineId = new OctetString(MPv3.createLocalEngineID());
-            final USM usm = new USM(SecurityProtocols.getInstance(), localEngineId, 0);
-            SecurityModels.getInstance().addSecurityModel(usm);
-        }
+        // Create USM.
+        final OctetString localEngineId = new OctetString(MPv3.createLocalEngineID());
+        final USM usm = new USM(SecurityProtocols.getInstance(), localEngineId, 0);
+        SecurityModels.getInstance().addSecurityModel(usm);
 
-        final String username = configuration.getSecurityName();
         final OID authProtocol = Optional.ofNullable(configuration.getAuthProtocol())
                 .map(SNMPUtils::getAuth).orElse(null);
+        final OctetString authPassphrase = Optional.ofNullable(configuration.getAuthPassphrase())
+                .map(OctetString::new).orElse(null);
         final OID privacyProtocol = Optional.ofNullable(configuration.getPrivacyProtocol())
                 .map(SNMPUtils::getPriv).orElse(null);
-        final String authPassword = configuration.getAuthPassphrase();
-        final String privacyPassword = configuration.getPrivacyPassphrase();
-        final OctetString authPasswordOctet = authPassword != null ? new OctetString(authPassword) : null;
-        final OctetString privacyPasswordOctet = privacyPassword != null ? new OctetString(privacyPassword) : null;
+        final OctetString privacyPassphrase = Optional.ofNullable(configuration.getPrivacyPassphrase())
+                .map(OctetString::new).orElse(null);
 
         // Add user information.
-        snmp.getUSM().addUser(
-                new OctetString(username),
-                new UsmUser(new OctetString(username), authProtocol, authPasswordOctet,
-                        privacyProtocol, privacyPasswordOctet));
+        Optional.ofNullable(configuration.getSecurityName())
+                .map(OctetString::new)
+                .ifPresent(sn -> addUser(snmpManager, sn, authProtocol, authPassphrase, privacyProtocol, privacyPassphrase));
 
-        return snmp;
+        return snmpManager;
+    }
+
+    private void addUser(final Snmp snmpManager, final OctetString securityName, final OID authProtocol, final OctetString authPassphrase,
+                         final OID privacyProtocol, final OctetString privacyPassphrase) {
+        snmpManager.getUSM().addUser(securityName, new UsmUser(securityName, authProtocol, authPassphrase,
+                privacyProtocol, privacyPassphrase));
     }
 
     @Override

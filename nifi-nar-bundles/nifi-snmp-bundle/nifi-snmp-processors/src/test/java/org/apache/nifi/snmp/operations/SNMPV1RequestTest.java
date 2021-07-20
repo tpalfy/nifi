@@ -16,13 +16,16 @@
  */
 package org.apache.nifi.snmp.operations;
 
+import org.apache.nifi.snmp.configuration.SNMPConfiguration;
 import org.apache.nifi.snmp.dto.SNMPSingleResponse;
 import org.apache.nifi.snmp.dto.SNMPTreeResponse;
 import org.apache.nifi.snmp.exception.RequestTimeoutException;
+import org.apache.nifi.snmp.helper.configurations.SNMPConfigurationFactory;
+import org.apache.nifi.snmp.helper.configurations.SNMPConfigurations;
 import org.apache.nifi.snmp.testagents.TestAgent;
 import org.apache.nifi.snmp.testagents.TestSNMPV1Agent;
+import org.apache.nifi.util.MockFlowFile;
 import org.junit.Test;
-import org.snmp4j.MessageException;
 import org.snmp4j.mp.SnmpConstants;
 
 import java.io.IOException;
@@ -32,6 +35,7 @@ import static org.junit.Assert.assertEquals;
 public class SNMPV1RequestTest extends SNMPRequestTest {
 
     private static final String NO_SUCH_NAME = "No such name";
+    private static final SNMPConfigurations snmpConfigurations = SNMPConfigurationFactory.getConfigurations(SnmpConstants.version1);
 
     @Override
     protected TestAgent getAgentInstance() {
@@ -40,46 +44,85 @@ public class SNMPV1RequestTest extends SNMPRequestTest {
 
     @Test
     public void testSuccessfulSnmpGet() throws IOException {
-        final SNMPSingleResponse response = getResponseEvent(LOCALHOST, agent.getPort(), SnmpConstants.version1, READ_ONLY_OID_1);
+        final SNMPConfiguration snmpConfiguration = snmpConfigurations.createSnmpGetSetConfiguration(agent.getPort());
+        final SNMPRequestHandler snmpRequestHandler = SNMPRequestHandlerFactory.createStandardRequestHandler(snmpConfiguration);
+        final SNMPSingleResponse response = snmpRequestHandler.get(READ_ONLY_OID_1);
+
         assertEquals(READ_ONLY_OID_VALUE_1, response.getVariableBindings().get(0).getVariable());
         assertEquals(SUCCESS, response.getErrorStatusText());
+        snmpRequestHandler.close();
     }
 
     @Test
-    public void testSuccessfulSnmpWalk() throws IOException {
-        final SNMPTreeResponse response = getTreeEvents(agent.getPort(), SnmpConstants.version1);
+    public void testSuccessfulSnmpWalk() {
+        final SNMPConfiguration snmpConfiguration = snmpConfigurations.createSnmpGetSetConfiguration(agent.getPort());
+        final SNMPRequestHandler snmpRequestHandler = SNMPRequestHandlerFactory.createStandardRequestHandler(snmpConfiguration);
+        final SNMPTreeResponse response = snmpRequestHandler.walk(WALK_OID);
         assertSubTreeContainsOids(response);
+        snmpRequestHandler.close();
     }
 
     @Test(expected = RequestTimeoutException.class)
     public void testSnmpGetTimeoutReturnsNull() throws IOException {
-        getResponseEvent(INVALID_HOST, agent.getPort(), SnmpConstants.version1, READ_ONLY_OID_1);
-    }
-
-    @Test(expected = MessageException.class)
-    public void testSnmpGetWithInvalidTargetThrowsException() throws IOException {
-        getResponseEvent(LOCALHOST, agent.getPort(), -1, READ_ONLY_OID_1);
+        final SNMPConfiguration snmpConfiguration = snmpConfigurations.createSnmpGetSetConfigWithCustomHost(INVALID_HOST, agent.getPort());
+        final SNMPRequestHandler snmpRequestHandler = SNMPRequestHandlerFactory.createStandardRequestHandler(snmpConfiguration);
+        snmpRequestHandler.get(READ_ONLY_OID_1);
+        snmpRequestHandler.close();
     }
 
     @Test
     public void testSuccessfulSnmpSet() throws IOException {
-        final SNMPSingleResponse response = getSetResponse(agent.getPort(), SnmpConstants.version1, WRITE_ONLY_OID, EXPECTED_OID_VALUE);
+        final MockFlowFile flowFile = getFlowFile(WRITE_ONLY_OID);
 
-        assertEquals(EXPECTED_OID_VALUE, response.getVariableBindings().get(0).getVariable());
+        final SNMPConfiguration snmpConfiguration = snmpConfigurations.createSnmpGetSetConfiguration(agent.getPort());
+        final SNMPRequestHandler snmpRequestHandler = SNMPRequestHandlerFactory.createStandardRequestHandler(snmpConfiguration);
+        final SNMPSingleResponse response = snmpRequestHandler.set(flowFile);
+
+        assertEquals(TEST_OID_VALUE, response.getVariableBindings().get(0).getVariable());
         assertEquals(SUCCESS, response.getErrorStatusText());
+        snmpRequestHandler.close();
     }
 
     @Test
     public void testCannotSetReadOnlyObject() throws IOException {
-        final SNMPSingleResponse response = getSetResponse(agent.getPort(), SnmpConstants.version1, READ_ONLY_OID_1, EXPECTED_OID_VALUE);
+        final MockFlowFile flowFile = getFlowFile(READ_ONLY_OID_1);
+
+        final SNMPConfiguration snmpConfiguration = snmpConfigurations.createSnmpGetSetConfiguration(agent.getPort());
+        final SNMPRequestHandler snmpRequestHandler = SNMPRequestHandlerFactory.createStandardRequestHandler(snmpConfiguration);
+        final SNMPSingleResponse response = snmpRequestHandler.set(flowFile);
 
         assertEquals(NO_SUCH_NAME, response.getErrorStatusText());
+        snmpRequestHandler.close();
     }
 
     @Test
     public void testCannotGetWriteOnlyObject() throws IOException {
-        final SNMPSingleResponse response = getResponseEvent(LOCALHOST, agent.getPort(), SnmpConstants.version1, WRITE_ONLY_OID);
+        final SNMPConfiguration snmpConfiguration = snmpConfigurations.createSnmpGetSetConfiguration(agent.getPort());
+        final SNMPRequestHandler snmpRequestHandler = SNMPRequestHandlerFactory.createStandardRequestHandler(snmpConfiguration);
+        final SNMPSingleResponse response = snmpRequestHandler.get(WRITE_ONLY_OID);
 
         assertEquals(NO_SUCH_NAME, response.getErrorStatusText());
+        snmpRequestHandler.close();
+    }
+
+    @Test
+    public void testCannotGetInvalidOid() throws IOException {
+        final SNMPConfiguration snmpConfiguration = snmpConfigurations.createSnmpGetSetConfiguration(agent.getPort());
+        final SNMPRequestHandler snmpRequestHandler = SNMPRequestHandlerFactory.createStandardRequestHandler(snmpConfiguration);
+        final SNMPSingleResponse response = snmpRequestHandler.get(INVALID_OID);
+
+        assertEquals("No such name", response.getErrorStatusText());
+        snmpRequestHandler.close();
+    }
+
+    @Test
+    public void testCannotSetInvalidOid() throws IOException {
+        final MockFlowFile flowFile = getFlowFile(INVALID_OID);
+        final SNMPConfiguration snmpConfiguration = snmpConfigurations.createSnmpGetSetConfiguration(agent.getPort());
+        final SNMPRequestHandler snmpRequestHandler = SNMPRequestHandlerFactory.createStandardRequestHandler(snmpConfiguration);
+        final SNMPSingleResponse response = snmpRequestHandler.set(flowFile);
+
+        assertEquals("No such name", response.getErrorStatusText());
+        snmpRequestHandler.close();
     }
 }

@@ -22,8 +22,6 @@ import org.snmp4j.Target;
 
 public interface SNMPFactory {
 
-    boolean supports(final int version);
-
     Snmp createSnmpManagerInstance(final SNMPConfiguration configuration);
 
     Target createTargetInstance(final SNMPConfiguration configuration);

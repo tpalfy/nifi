@@ -22,6 +22,7 @@ import org.apache.nifi.annotation.behavior.WritesAttribute;
 import org.apache.nifi.annotation.behavior.WritesAttributes;
 import org.apache.nifi.annotation.documentation.CapabilityDescription;
 import org.apache.nifi.annotation.documentation.Tags;
+import org.apache.nifi.annotation.lifecycle.OnScheduled;
 import org.apache.nifi.components.AllowableValue;
 import org.apache.nifi.components.PropertyDescriptor;
 import org.apache.nifi.flowfile.FlowFile;
@@ -29,6 +30,7 @@ import org.apache.nifi.processor.ProcessContext;
 import org.apache.nifi.processor.ProcessSession;
 import org.apache.nifi.processor.Relationship;
 import org.apache.nifi.processor.util.StandardValidators;
+import org.apache.nifi.reporting.InitializationException;
 import org.apache.nifi.snmp.dto.SNMPSingleResponse;
 import org.apache.nifi.snmp.dto.SNMPTreeResponse;
 import org.apache.nifi.snmp.exception.SNMPException;
@@ -134,6 +136,11 @@ public class GetSNMP extends AbstractSNMPProcessor {
             REL_FAILURE
     )));
 
+    @OnScheduled
+    public void init(final ProcessContext context) throws InitializationException {
+        initSnmpManager(context);
+    }
+
     @Override
     public void onTrigger(final ProcessContext context, final ProcessSession processSession) {
         final SNMPStrategy snmpStrategy = SNMPStrategy.valueOf(context.getProperty(SNMP_STRATEGY).getValue());
@@ -180,13 +187,22 @@ public class GetSNMP extends AbstractSNMPProcessor {
     }
 
     @Override
+    public Set<Relationship> getRelationships() {
+        return RELATIONSHIPS;
+    }
+
+    @Override
     protected List<PropertyDescriptor> getSupportedPropertyDescriptors() {
         return PROPERTY_DESCRIPTORS;
     }
 
+    protected String getTargetHost(ProcessContext processContext) {
+        return processContext.getProperty(AGENT_HOST).getValue();
+    }
+
     @Override
-    public Set<Relationship> getRelationships() {
-        return RELATIONSHIPS;
+    protected String getTargetPort(ProcessContext processContext) {
+        return processContext.getProperty(AGENT_PORT).getValue();
     }
 
     private FlowFile createFlowFileWithTreeEventProperties(final SNMPTreeResponse response, final ProcessSession processSession) {

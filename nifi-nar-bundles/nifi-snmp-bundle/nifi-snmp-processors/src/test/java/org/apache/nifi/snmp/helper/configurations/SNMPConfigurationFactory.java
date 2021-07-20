@@ -14,35 +14,31 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.apache.nifi.snmp.helper;
+package org.apache.nifi.snmp.helper.configurations;
 
 import org.apache.nifi.snmp.exception.InvalidSnmpVersionException;
-import org.apache.nifi.util.MockFlowFile;
 import org.snmp4j.mp.SnmpConstants;
 
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Optional;
 
-import static org.apache.nifi.snmp.utils.SNMPUtils.SNMP_PROP_PREFIX;
+public class SNMPConfigurationFactory {
 
-public class SNMPTestUtils {
+    private static final Map<Integer, SNMPConfigurations> snmpConfigurationMap;
 
-    public static String getVersionByInt(int version) {
-        if (SnmpConstants.version1 == version) {
-            return "SNMPv1";
-        } else if (SnmpConstants.version2c == version) {
-            return "SNMPv2c";
-        } else if (SnmpConstants.version3 == version) {
-            return "SNMPv3";
-        }
-        throw new InvalidSnmpVersionException("Invalid version");
+    static {
+        final Map<Integer, SNMPConfigurations> testRunners = new HashMap<>();
+        testRunners.put(SnmpConstants.version1, new SNMPV1Configurations());
+        testRunners.put(SnmpConstants.version2c, new SNMPV2cConfigurations());
+        testRunners.put(SnmpConstants.version3, new SNMPV3Configurations());
+        snmpConfigurationMap = Collections.unmodifiableMap(testRunners);
     }
 
-    public static MockFlowFile getFlowFile(String oid, String oidValue) {
-        final MockFlowFile flowFile = new MockFlowFile(1L);
-        final Map<String, String> attributes = new HashMap<>();
-        attributes.put(SNMP_PROP_PREFIX + oid, oidValue);
-        flowFile.putAttributes(attributes);
-        return flowFile;
+    public static SNMPConfigurations getConfigurations(final int version) {
+        return Optional.ofNullable(snmpConfigurationMap.get(version))
+                .orElseThrow(() -> new InvalidSnmpVersionException("Invalid SNMP version while creating SNMP configuration."));
     }
+
 }

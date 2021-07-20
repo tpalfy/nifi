@@ -14,24 +14,25 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.apache.nifi.snmp.operations;
+package org.apache.nifi.snmp.configuration;
 
-import org.apache.nifi.flowfile.FlowFile;
-import org.apache.nifi.snmp.configuration.TrapConfiguration;
-import org.apache.nifi.snmp.dto.SNMPSingleResponse;
-import org.apache.nifi.snmp.dto.SNMPTreeResponse;
+public interface TrapConfiguration {
 
-import java.io.IOException;
+    // SNMPv1 specific
+    String getEnterpriseOid();
 
-public interface SNMPRequestHandler {
+    String getAgentAddress();
 
-    SNMPSingleResponse get(final String oid) throws IOException;
+    int getGenericTrapType();
 
-    SNMPTreeResponse walk(final String oid);
+    Integer getSpecificTrapType();
 
-    SNMPSingleResponse set(final FlowFile flowfile) throws IOException;
+    int getTimeStamp();
 
-    void sendTrap(TrapConfiguration configuration, final FlowFile flowFile) throws IOException;
+    // SNMPv2c and v3 specific
 
-    void close();
+    String getTrapOidValue();
+
+    int getSysUpTime();
+
 }
