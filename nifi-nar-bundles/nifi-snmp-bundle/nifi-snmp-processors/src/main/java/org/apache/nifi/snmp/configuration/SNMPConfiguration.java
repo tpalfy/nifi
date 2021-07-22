@@ -18,7 +18,7 @@ package org.apache.nifi.snmp.configuration;
 
 public class SNMPConfiguration {
 
-    private final String managerPort;
+    private final int managerPort;
     private final String targetHost;
     private final String targetPort;
     private final int retries;
@@ -32,7 +32,7 @@ public class SNMPConfiguration {
     private final String securityLevel;
     private final String communityString;
 
-    SNMPConfiguration(final String managerPort,
+    SNMPConfiguration(final int managerPort,
                       final String targetHost,
                       final String targetPort,
                       final int retries,
@@ -60,7 +60,7 @@ public class SNMPConfiguration {
         this.communityString = communityString;
     }
 
-    public String getManagerPort() {
+    public int getManagerPort() {
         return managerPort;
     }
 
@@ -118,7 +118,7 @@ public class SNMPConfiguration {
 
     public static class Builder {
 
-        private String managerPort = "0";
+        private int managerPort = 0;
         private String targetHost;
         private String targetPort;
         private int retries;
@@ -132,7 +132,7 @@ public class SNMPConfiguration {
         private String securityLevel;
         private String communityString;
 
-        public Builder setManagerPort(final String managerPort) {
+        public Builder setManagerPort(final int managerPort) {
             this.managerPort = managerPort;
             return this;
         }

@@ -44,6 +44,7 @@ import org.snmp4j.util.TreeUtils;
 import java.io.IOException;
 import java.util.List;
 
+// DELETE
 final class StandardSNMPRequestHandler implements SNMPRequestHandler {
 
     private static final String INVALID_FLOWFILE_EXCEPTION_MESSAGE = "Could not read the variable bindings from the " +
@@ -58,7 +59,7 @@ final class StandardSNMPRequestHandler implements SNMPRequestHandler {
     private static final Logger logger = LoggerFactory.getLogger(StandardSNMPRequestHandler.class);
     private static final PDUFactory getPduFactory = new DefaultPDUFactory(PDU.GET);
     private static final PDUFactory setPduFactory = new DefaultPDUFactory(PDU.SET);
-    private static final TrapPDUFactory trapPduFactory = new TrapPDUFactory();
+    private static final TrapPDUFactory trapPduFactory = new TrapPDUFactory(null, null);
     private final Snmp snmpManager;
     private final Target target;
 
@@ -138,7 +139,7 @@ final class StandardSNMPRequestHandler implements SNMPRequestHandler {
     }
 
     public void sendTrap(TrapConfiguration configuration, final FlowFile flowFile) throws IOException {
-        final PDU pdu = trapPduFactory.getTrapPdu(target, configuration);
+        final PDU pdu = trapPduFactory.getTrapPdu();
         if (flowFile != null) {
             final boolean isAnyVariableAdded = SNMPUtils.addVariables(pdu, flowFile.getAttributes());
             if (!isAnyVariableAdded) {

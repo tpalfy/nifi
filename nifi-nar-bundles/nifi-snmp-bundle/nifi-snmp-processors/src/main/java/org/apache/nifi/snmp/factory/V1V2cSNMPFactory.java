@@ -17,12 +17,21 @@
 package org.apache.nifi.snmp.factory;
 
 import org.apache.nifi.snmp.configuration.SNMPConfiguration;
-import org.snmp4j.Snmp;
+import org.snmp4j.CommunityTarget;
 import org.snmp4j.Target;
+import org.snmp4j.smi.OctetString;
 
-public interface SNMPFactory {
+import java.util.Optional;
 
-    Snmp createSnmpManagerInstance(final SNMPConfiguration configuration);
+public class V1V2cSNMPFactory extends BasicSNMPFactory implements ClientSNMPFactory {
+    @Override
+    public Target createTargetInstance(final SNMPConfiguration configuration) {
+        final Target communityTarget = new CommunityTarget();
+        setupTargetBasicProperties(communityTarget, configuration);
+        final String community = configuration.getCommunityString();
 
-    Target createTargetInstance(final SNMPConfiguration configuration);
+        Optional.ofNullable(community).map(OctetString::new).ifPresent(communityTarget::setSecurityName);
+
+        return communityTarget;
+    }
 }

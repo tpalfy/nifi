@@ -16,6 +16,22 @@
  */
 package org.apache.nifi.snmp.factory;
 
-// DELETE
-public class ListenTrapSNMPFactory extends BasicSNMPFactory {
+import org.apache.nifi.snmp.configuration.SNMPConfiguration;
+import org.apache.nifi.snmp.operations.SNMPResourceHandler;
+import org.snmp4j.Snmp;
+import org.snmp4j.Target;
+
+public interface ClientSNMPFactory {
+    default SNMPResourceHandler createSNMPResourceHandler(SNMPConfiguration snmpConfiguration) {
+        SNMPResourceHandler snmpResourceHandler = new SNMPResourceHandler(
+            createSnmpManagerInstance(snmpConfiguration),
+            createTargetInstance(snmpConfiguration)
+        );
+
+        return snmpResourceHandler;
+    }
+
+    Snmp createSnmpManagerInstance(final SNMPConfiguration configuration);
+
+    Target createTargetInstance(final SNMPConfiguration configuration);
 }

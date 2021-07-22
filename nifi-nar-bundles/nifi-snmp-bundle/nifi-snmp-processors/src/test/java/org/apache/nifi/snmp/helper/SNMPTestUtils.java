@@ -27,6 +27,7 @@ import static org.apache.nifi.snmp.utils.SNMPUtils.SNMP_PROP_PREFIX;
 
 public class SNMPTestUtils {
 
+    // DELETE
     public static String getVersionByInt(int version) {
         if (SnmpConstants.version1 == version) {
             return "SNMPv1";

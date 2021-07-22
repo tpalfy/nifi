@@ -23,6 +23,7 @@ import org.apache.nifi.snmp.dto.SNMPTreeResponse;
 
 import java.io.IOException;
 
+// DELETE
 public interface SNMPRequestHandler {
 
     SNMPSingleResponse get(final String oid) throws IOException;

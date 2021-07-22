@@ -16,6 +16,7 @@
  */
 package org.apache.nifi.snmp.configuration;
 
+// DELETE
 public interface TrapConfiguration {
 
     // SNMPv1 specific

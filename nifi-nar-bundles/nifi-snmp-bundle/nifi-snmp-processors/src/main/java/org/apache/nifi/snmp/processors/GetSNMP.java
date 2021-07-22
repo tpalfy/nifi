@@ -35,6 +35,7 @@ import org.apache.nifi.snmp.dto.SNMPSingleResponse;
 import org.apache.nifi.snmp.dto.SNMPTreeResponse;
 import org.apache.nifi.snmp.exception.SNMPException;
 import org.apache.nifi.snmp.exception.SNMPWalkException;
+import org.apache.nifi.snmp.operations.GetSNMPHandler;
 import org.apache.nifi.snmp.utils.SNMPUtils;
 import org.apache.nifi.snmp.validators.OIDValidator;
 
@@ -136,9 +137,12 @@ public class GetSNMP extends AbstractSNMPProcessor {
             REL_FAILURE
     )));
 
+    private volatile GetSNMPHandler snmpHandler;
+
     @OnScheduled
     public void init(final ProcessContext context) throws InitializationException {
         initSnmpManager(context);
+        snmpHandler = new GetSNMPHandler(snmpResourceHandler);
     }
 
     @Override
@@ -155,7 +159,7 @@ public class GetSNMP extends AbstractSNMPProcessor {
 
     private void performSnmpWalk(final ProcessContext context, final ProcessSession processSession, final String oid) {
         try {
-            final SNMPTreeResponse response = snmpRequestHandler.walk(oid);
+            final SNMPTreeResponse response = snmpHandler.walk(oid);
             response.logErrors(getLogger());
             FlowFile flowFile = createFlowFileWithTreeEventProperties(response, processSession);
             processSession.getProvenanceReporter().receive(flowFile, response.getTargetAddress() + "/" + oid);
@@ -170,7 +174,7 @@ public class GetSNMP extends AbstractSNMPProcessor {
     private void performSnmpGet(final ProcessContext context, final ProcessSession processSession, final String oid) {
         final SNMPSingleResponse response;
         try {
-            response = snmpRequestHandler.get(oid);
+            response = snmpHandler.get(oid);
             final FlowFile flowFile = processSession.create();
             addAttribute(SNMPUtils.SNMP_PROP_PREFIX + "textualOid", context.getProperty(TEXTUAL_OID).getValue(), flowFile, processSession);
             final String provenanceAddress = response.getTargetAddress() + "/" + oid;

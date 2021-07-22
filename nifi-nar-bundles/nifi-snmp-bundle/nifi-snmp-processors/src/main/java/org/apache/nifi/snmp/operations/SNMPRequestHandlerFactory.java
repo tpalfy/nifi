@@ -16,23 +16,18 @@
  */
 package org.apache.nifi.snmp.operations;
 
-import org.apache.nifi.snmp.configuration.SNMPConfiguration;
-import org.apache.nifi.snmp.factory.CompositeSNMPFactory;
-import org.apache.nifi.snmp.factory.SNMPFactory;
-import org.snmp4j.Snmp;
-import org.snmp4j.Target;
-
+// DELETE
 public final class SNMPRequestHandlerFactory {
 
-    public static SNMPRequestHandler createStandardRequestHandler(final SNMPConfiguration configuration) {
-        final SNMPFactory snmpFactory = new CompositeSNMPFactory();
-        final Snmp snmpManager = snmpFactory.createSnmpManagerInstance(configuration);
-        final Target target = snmpFactory.createTargetInstance(configuration);
-        return new StandardSNMPRequestHandler(snmpManager, target);
-    }
-
-    private SNMPRequestHandlerFactory() {
-        // This should not be instantiated.
-    }
+//    public static SNMPRequestHandler createStandardRequestHandler(final SNMPConfiguration configuration) {
+//        final ClientSNMPFactory snmpFactory = new VersionedSNMPFactory();
+//        final Snmp snmpManager = snmpFactory.createSnmpManagerInstance(configuration);
+//        final Target target = snmpFactory.createTargetInstance(configuration);
+//        return new StandardSNMPRequestHandler(snmpManager, target);
+//    }
+//
+//    private SNMPRequestHandlerFactory() {
+//        // This should not be instantiated.
+//    }
 
 }

@@ -68,6 +68,7 @@ public final class SNMPUtils {
 
     private static final Map<String, OID> AUTH_MAP;
     private static final Map<String, OID> PRIV_MAP;
+    // DELETE
     private static final Map<String, Integer> VERSION_MAP;
     private static final Map<String, String> REPORT_MAP;
 
@@ -107,6 +108,7 @@ public final class SNMPUtils {
         AUTH_MAP = Collections.unmodifiableMap(map);
     }
 
+    // DELETE
     static {
         final Map<String, Integer> map = new HashMap<>();
         map.put("SNMPv1", SnmpConstants.version1);
@@ -173,6 +175,7 @@ public final class SNMPUtils {
         throw new InvalidAuthProtocolException("Invalid authentication protocol provided.");
     }
 
+    // DELETE
     public static int getVersion(final String snmpVersion) {
         return Optional.ofNullable(VERSION_MAP.get(snmpVersion))
                 .orElseThrow(() -> new InvalidSnmpVersionException("Invalid SNMP version provided."));

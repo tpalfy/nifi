@@ -32,6 +32,7 @@ import org.apache.nifi.processor.exception.ProcessException;
 import org.apache.nifi.reporting.InitializationException;
 import org.apache.nifi.snmp.dto.SNMPSingleResponse;
 import org.apache.nifi.snmp.exception.SNMPException;
+import org.apache.nifi.snmp.operations.SetSNMPHandler;
 import org.apache.nifi.snmp.utils.SNMPUtils;
 
 import java.io.IOException;
@@ -94,9 +95,12 @@ public class SetSNMP extends AbstractSNMPProcessor {
             REL_FAILURE
     )));
 
+    private volatile SetSNMPHandler snmpHandler;
+
     @OnScheduled
     public void init(final ProcessContext context) throws InitializationException {
         initSnmpManager(context);
+        snmpHandler = new SetSNMPHandler(snmpResourceHandler);
     }
 
     @Override
@@ -104,7 +108,7 @@ public class SetSNMP extends AbstractSNMPProcessor {
         final FlowFile flowFile = processSession.get();
         if (flowFile != null) {
             try {
-                final SNMPSingleResponse response = snmpRequestHandler.set(flowFile);
+                final SNMPSingleResponse response = snmpHandler.set(flowFile);
                 processResponse(processSession, flowFile, response, response.getTargetAddress(), REL_SUCCESS);
             } catch (SNMPException e) {
                 getLogger().error(e.getMessage());

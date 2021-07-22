@@ -32,9 +32,9 @@ import org.apache.nifi.snmp.configuration.SNMPConfiguration;
 import org.apache.nifi.snmp.dto.SNMPSingleResponse;
 import org.apache.nifi.snmp.dto.SNMPValue;
 import org.apache.nifi.snmp.exception.SNMPException;
+import org.apache.nifi.snmp.factory.VersionedSNMPFactory;
 import org.apache.nifi.snmp.logging.SLF4JLogFactory;
-import org.apache.nifi.snmp.operations.SNMPRequestHandler;
-import org.apache.nifi.snmp.operations.SNMPRequestHandlerFactory;
+import org.apache.nifi.snmp.operations.SNMPResourceHandler;
 import org.apache.nifi.snmp.utils.SNMPUtils;
 import org.snmp4j.log.LogFactory;
 import org.snmp4j.mp.SnmpConstants;
@@ -57,9 +57,9 @@ abstract class AbstractSNMPProcessor extends AbstractProcessor {
     private static final String SHA_2_ALGORITHM = "Provides authentication based on the HMAC-SHA-2 algorithm.";
     private static final String NO_SUCH_OBJECT = "noSuchObject";
     // SNMP versions
-    public static final AllowableValue SNMP_V1 = new AllowableValue("SNMPv1", "v1", "SNMP version 1");
-    public static final AllowableValue SNMP_V2C = new AllowableValue("SNMPv2c", "v2c", "SNMP version 2c");
-    public static final AllowableValue SNMP_V3 = new AllowableValue("SNMPv3", "v3", "SNMP version 3 with improved security");
+    public static final AllowableValue SNMP_V1 = new AllowableValue(SnmpConstants.version1 + "", "v1", "SNMP version 1");
+    public static final AllowableValue SNMP_V2C = new AllowableValue(SnmpConstants.version2c + "", "v2c", "SNMP version 2c");
+    public static final AllowableValue SNMP_V3 = new AllowableValue(SnmpConstants.version3 + "", "v3", "SNMP version 3 with improved security");
 
     // SNMPv3 security levels
     public static final AllowableValue NO_AUTH_NO_PRIV = new AllowableValue("noAuthNoPriv", "noAuthNoPriv",
@@ -221,11 +221,11 @@ abstract class AbstractSNMPProcessor extends AbstractProcessor {
             .build();
 
 
-    protected volatile SNMPRequestHandler snmpRequestHandler;
+    protected volatile SNMPResourceHandler snmpResourceHandler;
 
     @OnScheduled
     public void initSnmpManager(final ProcessContext context) throws InitializationException {
-        final int version = SNMPUtils.getVersion(context.getProperty(SNMP_VERSION).getValue());
+        final int version = context.getProperty(SNMP_VERSION).asInteger();
         final SNMPConfiguration configuration;
         final String targetHost = getTargetHost(context);
         final String targetPort = getTargetPort(context);
@@ -247,7 +247,8 @@ abstract class AbstractSNMPProcessor extends AbstractProcessor {
         } catch (IllegalStateException e) {
             throw new InitializationException(e);
         }
-        snmpRequestHandler = SNMPRequestHandlerFactory.createStandardRequestHandler(configuration);
+
+        snmpResourceHandler = VersionedSNMPFactory.getMatchingFactory(version).createSNMPResourceHandler(configuration);
     }
 
     /**
@@ -255,9 +256,9 @@ abstract class AbstractSNMPProcessor extends AbstractProcessor {
      */
     @OnStopped
     public void close() {
-        if (snmpRequestHandler != null) {
-            snmpRequestHandler.close();
-            snmpRequestHandler = null;
+        if (snmpResourceHandler != null) {
+            snmpResourceHandler.close();
+            snmpResourceHandler = null;
         }
     }
 

@@ -158,8 +158,8 @@ public class ListenTrapSNMP extends AbstractSessionFactoryProcessor {
 
     @OnScheduled
     public void initSnmpManager(ProcessContext context) throws InitializationException {
-        final int version = SNMPUtils.getVersion(context.getProperty(SNMP_VERSION).getValue());
-        final String managerPort = context.getProperty(SNMP_MANAGER_PORT).getValue();
+        final int version = context.getProperty(SNMP_VERSION).asInteger();
+        final int managerPort = context.getProperty(SNMP_MANAGER_PORT).asInteger();
         final String usmUsersFilePath = context.getProperty(SNMP_USM_USERS_FILE_PATH).getValue();
         SNMPConfiguration configuration;
         try {

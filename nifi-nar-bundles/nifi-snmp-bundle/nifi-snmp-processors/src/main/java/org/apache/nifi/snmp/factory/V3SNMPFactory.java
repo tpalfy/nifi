@@ -20,7 +20,9 @@ import org.apache.nifi.snmp.configuration.SNMPConfiguration;
 import org.apache.nifi.snmp.utils.SNMPUtils;
 import org.snmp4j.Snmp;
 import org.snmp4j.Target;
+import org.snmp4j.UserTarget;
 import org.snmp4j.mp.MPv3;
+import org.snmp4j.security.SecurityLevel;
 import org.snmp4j.security.SecurityModels;
 import org.snmp4j.security.SecurityProtocols;
 import org.snmp4j.security.USM;
@@ -30,11 +32,11 @@ import org.snmp4j.smi.OctetString;
 
 import java.util.Optional;
 
-public class V3SNMPFactory extends AbstractSNMPFactory implements SNMPFactory {
+public class V3SNMPFactory extends BasicSNMPFactory implements ClientSNMPFactory {
 
     @Override
     public Snmp createSnmpManagerInstance(final SNMPConfiguration configuration) {
-        final Snmp snmpManager = createSimpleSnmpManager(configuration);
+        final Snmp snmpManager = super.createSnmpManagerInstance(configuration);
 
         // Create USM.
         final OctetString localEngineId = new OctetString(MPv3.createLocalEngineID());
@@ -53,7 +55,7 @@ public class V3SNMPFactory extends AbstractSNMPFactory implements SNMPFactory {
         // Add user information.
         Optional.ofNullable(configuration.getSecurityName())
                 .map(OctetString::new)
-                .ifPresent(sn -> addUser(snmpManager, sn, authProtocol, authPassphrase, privacyProtocol, privacyPassphrase));
+                .ifPresent(securityName -> addUser(snmpManager, securityName, authProtocol, authPassphrase, privacyProtocol, privacyPassphrase));
 
         return snmpManager;
     }
@@ -66,6 +68,15 @@ public class V3SNMPFactory extends AbstractSNMPFactory implements SNMPFactory {
 
     @Override
     public Target createTargetInstance(final SNMPConfiguration configuration) {
-        return createUserTarget(configuration);
+        final UserTarget userTarget = new UserTarget();
+        setupTargetBasicProperties(userTarget, configuration);
+
+        final int securityLevel = SecurityLevel.valueOf(configuration.getSecurityLevel()).getSnmpValue();
+        userTarget.setSecurityLevel(securityLevel);
+
+        final String securityName = configuration.getSecurityName();
+        Optional.ofNullable(securityName).map(OctetString::new).ifPresent(userTarget::setSecurityName);
+
+        return userTarget;
     }
 }

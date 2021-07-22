@@ -28,10 +28,10 @@ import static org.hamcrest.CoreMatchers.equalTo;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
 
-public class SNMPFactoryTest {
+public class ClientSNMPFactoryTest {
 
     private final SNMPConfiguration.Builder configurationBuilder = SNMPConfiguration.builder()
-            .setManagerPort("0")
+            .setManagerPort(0)
             .setTargetHost("1.2.3.4")
             .setTargetPort("12345")
             .setRetries(1)
@@ -51,7 +51,7 @@ public class SNMPFactoryTest {
                 .build();
 
 
-        final SNMPFactory snmpFactory = new CompositeSNMPFactory();
+        final ClientSNMPFactory snmpFactory = new VersionedSNMPFactory();
         final Snmp snmpManager = snmpFactory.createSnmpManagerInstance(configuration);
         final UsmUser user = snmpManager.getUSM().getUserTable().getUser(new OctetString("userName")).getUsmUser();
 

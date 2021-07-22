@@ -16,55 +16,30 @@
  */
 package org.apache.nifi.snmp.factory;
 
-import org.apache.nifi.snmp.configuration.TrapConfiguration;
+import org.apache.nifi.snmp.configuration.TrapV2cV3Configuration;
 import org.snmp4j.PDU;
-import org.snmp4j.PDUv1;
 import org.snmp4j.Target;
 import org.snmp4j.mp.SnmpConstants;
-import org.snmp4j.smi.IpAddress;
-import org.snmp4j.smi.OID;
 import org.snmp4j.smi.OctetString;
 import org.snmp4j.smi.TimeTicks;
 import org.snmp4j.smi.VariableBinding;
 import org.snmp4j.util.DefaultPDUFactory;
 import org.snmp4j.util.PDUFactory;
+import java.util.function.Supplier;
 
-import java.util.Optional;
-
-// DELETE
-public class TrapPDUFactory {
-
-    private static final PDUFactory v1TrapPduFactory = new DefaultPDUFactory(PDU.V1TRAP);
+public class V2cV3TrapPDUFactory implements Supplier<PDU> {
     private static final PDUFactory v2cV3trapPduFactory = new DefaultPDUFactory(PDU.TRAP);
 
-    private final Target target;
-    private final TrapConfiguration configuration;
+    final Target target;
+    final TrapV2cV3Configuration configuration;
 
-    public TrapPDUFactory(final Target target, final TrapConfiguration configuration) {
+    public V2cV3TrapPDUFactory(Target target, TrapV2cV3Configuration configuration) {
         this.target = target;
         this.configuration = configuration;
     }
 
-    public PDU getTrapPdu() {
-        if (target.getVersion() == SnmpConstants.version1) {
-            return createV1Pdu(target, configuration);
-        } else {
-            return createV2cV3Pdu(target, configuration);
-        }
-    }
-
-
-    private PDU createV1Pdu(final Target target, final TrapConfiguration configuration) {
-        final PDUv1 pdu = (PDUv1) v1TrapPduFactory.createPDU(target);
-        Optional.ofNullable(configuration.getEnterpriseOid()).map(OID::new).ifPresent(pdu::setEnterprise);
-        Optional.ofNullable(configuration.getAgentAddress()).map(IpAddress::new).ifPresent(pdu::setAgentAddress);
-        pdu.setGenericTrap(configuration.getGenericTrapType());
-        Optional.ofNullable(configuration.getSpecificTrapType()).ifPresent(pdu::setSpecificTrap);
-        pdu.setTimestamp(configuration.getTimeStamp());
-        return pdu;
-    }
-
-    private PDU createV2cV3Pdu(final Target target, final TrapConfiguration configuration) {
+    @Override
+    public PDU get() {
         final PDU pdu = v2cV3trapPduFactory.createPDU(target);
         pdu.add(new VariableBinding(SnmpConstants.sysUpTime, new TimeTicks(configuration.getSysUpTime())));
         pdu.add(new VariableBinding(SnmpConstants.snmpTrapOID, new OctetString(configuration.getTrapOidValue())));

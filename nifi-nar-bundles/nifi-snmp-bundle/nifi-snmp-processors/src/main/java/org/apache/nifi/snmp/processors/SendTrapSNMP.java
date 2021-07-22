@@ -28,10 +28,12 @@ import org.apache.nifi.processor.ProcessSession;
 import org.apache.nifi.processor.Relationship;
 import org.apache.nifi.processor.util.StandardValidators;
 import org.apache.nifi.reporting.InitializationException;
-import org.apache.nifi.snmp.configuration.TrapConfiguration;
 import org.apache.nifi.snmp.configuration.TrapV1Configuration;
 import org.apache.nifi.snmp.configuration.TrapV2cV3Configuration;
-import org.apache.nifi.snmp.utils.SNMPUtils;
+import org.apache.nifi.snmp.factory.V1TrapPDUFactory;
+import org.apache.nifi.snmp.factory.V2cV3TrapPDUFactory;
+import org.apache.nifi.snmp.operations.SendTrapSNMPHandler;
+import org.snmp4j.PDU;
 import org.snmp4j.mp.SnmpConstants;
 
 import java.io.IOException;
@@ -40,6 +42,7 @@ import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
+import java.util.function.Supplier;
 
 /**
  * Receiving data from configured SNMP agent which, upon each invocation of
@@ -51,7 +54,6 @@ import java.util.Set;
 @InputRequirement(InputRequirement.Requirement.INPUT_FORBIDDEN)
 @CapabilityDescription("Sends information to SNMP Manager.")
 public class SendTrapSNMP extends AbstractSNMPProcessor {
-
     public static final AllowableValue GENERIC_TRAP_TYPE_0 = new AllowableValue("0", "Cold Start",
             "A coldStart trap signifies that the sending protocol entity is reinitializing itself such that" +
                     " the agent's configuration or the protocol entity implementation may be altered.");
@@ -209,33 +211,42 @@ public class SendTrapSNMP extends AbstractSNMPProcessor {
             REL_FAILURE
     )));
 
-    private volatile TrapConfiguration trapConfiguration;
+    private volatile SendTrapSNMPHandler snmpHandler;
 
     @OnScheduled
     public void init(ProcessContext context) throws InitializationException {
         initSnmpManager(context);
-        final int snmpVersion = SNMPUtils.getVersion(context.getProperty(SNMP_VERSION).getValue());
+
+        final int snmpVersion = context.getProperty(SNMP_VERSION).asInteger();
+
+        Supplier<PDU> pduFactory;
         if (SnmpConstants.version1 == snmpVersion) {
-            trapConfiguration = TrapV1Configuration.builder()
+            TrapV1Configuration trapConfiguration = TrapV1Configuration.builder()
                     .enterpriseOid(context.getProperty(ENTERPRISE_OID).getValue())
                     .agentAddress(context.getProperty(AGENT_ADDRESS).getValue())
                     .genericTrapType(context.getProperty(GENERIC_TRAP_TYPE).asInteger())
                     .specificTrapType(context.getProperty(SPECIFIC_TRAP_TYPE).asInteger())
                     .timeStamp(context.getProperty(TIME_STAMP).asInteger())
                     .build();
+
+            pduFactory = new V1TrapPDUFactory(snmpResourceHandler.getTarget(), trapConfiguration);
         } else {
-            trapConfiguration = new TrapV2cV3Configuration(
+            TrapV2cV3Configuration trapConfiguration = new TrapV2cV3Configuration(
                     context.getProperty(TRAP_OID_VALUE).getValue(),
                     context.getProperty(SYSTEM_UPTIME).asInteger()
             );
+
+            pduFactory = new V2cV3TrapPDUFactory(snmpResourceHandler.getTarget(), trapConfiguration);
         }
+
+        snmpHandler = new SendTrapSNMPHandler(snmpResourceHandler, pduFactory);
     }
 
     @Override
     public void onTrigger(final ProcessContext context, final ProcessSession processSession) {
         final FlowFile flowFile = processSession.get();
         try {
-            snmpRequestHandler.sendTrap(trapConfiguration, flowFile);
+            snmpHandler.sendTrap(flowFile);
             if (flowFile != null) {
                 processSession.remove(flowFile);
             }

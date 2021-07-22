@@ -20,15 +20,18 @@ import org.apache.nifi.snmp.configuration.SNMPConfiguration;
 import org.snmp4j.Snmp;
 import org.snmp4j.Target;
 
-public class V2cSNMPFactory extends AbstractSNMPFactory implements SNMPFactory {
-
-    @Override
-    public Snmp createSnmpManagerInstance(final SNMPConfiguration configuration) {
-        return createSimpleSnmpManager(configuration);
-    }
-
-    @Override
-    public Target createTargetInstance(final SNMPConfiguration configuration) {
-        return createCommunityTarget(configuration);
-    }
+// DELETE
+public class V2cSNMPFactory
+//    extends BasicSNMPFactory implements ClientSNMPFactory
+{
+//
+//    @Override
+//    public Snmp createSnmpManagerInstance(final SNMPConfiguration configuration) {
+//        return createSimpleSnmpManager(configuration);
+//    }
+//
+//    @Override
+//    public Target createTargetInstance(final SNMPConfiguration configuration) {
+//        return createCommunityTarget(configuration);
+//    }
 }

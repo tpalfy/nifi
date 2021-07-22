@@ -20,32 +20,26 @@ import org.apache.nifi.snmp.configuration.SNMPConfiguration;
 import org.apache.nifi.snmp.exception.CreateSNMPClientException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.snmp4j.CommunityTarget;
 import org.snmp4j.Snmp;
 import org.snmp4j.Target;
-import org.snmp4j.UserTarget;
-import org.snmp4j.security.SecurityLevel;
-import org.snmp4j.smi.OctetString;
 import org.snmp4j.smi.UdpAddress;
 import org.snmp4j.transport.DefaultUdpTransportMapping;
 
 import java.io.IOException;
-import java.util.Optional;
 
-public abstract class AbstractSNMPFactory {
+public class BasicSNMPFactory {
 
-    private static final Logger logger = LoggerFactory.getLogger(AbstractSNMPFactory.class);
+    private static final Logger logger = LoggerFactory.getLogger(BasicSNMPFactory.class);
     private static final String LOCALHOST = "127.0.0.1";
 
-    protected AbstractSNMPFactory() {
-        // hide implicit constructor
+    public BasicSNMPFactory() {
     }
 
-    protected static Snmp createSimpleSnmpManager(SNMPConfiguration configuration) {
-        final String managerAddress = LOCALHOST + "/" + configuration.getManagerPort();
+    public Snmp createSnmpManagerInstance(SNMPConfiguration configuration) {
+//        final String managerAddress = LOCALHOST + "/" + configuration.getManagerPort();
         final Snmp snmpManager;
         try {
-            snmpManager = new Snmp(new DefaultUdpTransportMapping(new UdpAddress(managerAddress)));
+            snmpManager = new Snmp(new DefaultUdpTransportMapping(new UdpAddress(configuration.getManagerPort())));
             snmpManager.listen();
         } catch (IOException e) {
             final String errorMessage = "Creating SNMP manager failed.";
@@ -55,30 +49,7 @@ public abstract class AbstractSNMPFactory {
         return snmpManager;
     }
 
-    protected static Target createUserTarget(final SNMPConfiguration configuration) {
-        final UserTarget userTarget = new UserTarget();
-        setupTargetBasicProperties(userTarget, configuration);
-
-        final int securityLevel = SecurityLevel.valueOf(configuration.getSecurityLevel()).getSnmpValue();
-        userTarget.setSecurityLevel(securityLevel);
-
-        final String securityName = configuration.getSecurityName();
-        Optional.ofNullable(securityName).map(OctetString::new).ifPresent(userTarget::setSecurityName);
-
-        return userTarget;
-    }
-
-    protected static Target createCommunityTarget(final SNMPConfiguration configuration) {
-        final Target communityTarget = new CommunityTarget();
-        setupTargetBasicProperties(communityTarget, configuration);
-        final String community = configuration.getCommunityString();
-
-        Optional.ofNullable(community).map(OctetString::new).ifPresent(communityTarget::setSecurityName);
-
-        return communityTarget;
-    }
-
-    private static void setupTargetBasicProperties(final Target target, final SNMPConfiguration configuration) {
+    protected void setupTargetBasicProperties(final Target target, final SNMPConfiguration configuration) {
         final int snmpVersion = configuration.getVersion();
         final String host = configuration.getTargetHost();
         final String port = configuration.getTargetPort();

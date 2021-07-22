@@ -50,7 +50,7 @@ public class SNMPClientFactoryTest {
                 .build();
 
 
-        final SNMPFactory snmpFactory = new CompositeSNMPFactory();
+        final ClientSNMPFactory snmpFactory = new VersionedSNMPFactory();
         final Snmp snmpManager = snmpFactory.createSnmpManagerInstance(configuration);
         final UsmUser user = snmpManager.getUSM().getUserTable().getUser(new OctetString("userName")).getUsmUser();
 

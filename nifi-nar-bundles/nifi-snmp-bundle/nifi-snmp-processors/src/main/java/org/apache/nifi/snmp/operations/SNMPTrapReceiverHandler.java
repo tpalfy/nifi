@@ -24,7 +24,7 @@ import org.apache.nifi.processor.exception.ProcessException;
 import org.apache.nifi.snmp.configuration.SNMPConfiguration;
 import org.apache.nifi.snmp.dto.UserDetails;
 import org.apache.nifi.snmp.exception.CloseSNMPManagerException;
-import org.apache.nifi.snmp.factory.ListenTrapSNMPFactory;
+import org.apache.nifi.snmp.factory.BasicSNMPFactory;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.snmp4j.Snmp;
@@ -54,7 +54,7 @@ public class SNMPTrapReceiverHandler {
     public SNMPTrapReceiverHandler(final SNMPConfiguration configuration, final String usmUsersFilePath) {
         this.configuration = configuration;
         this.usmUsersFilePath = usmUsersFilePath;
-        snmpManager = new ListenTrapSNMPFactory().createSnmpManagerInstance(configuration);
+        snmpManager = new BasicSNMPFactory().createSnmpManagerInstance(configuration);
     }
 
     public void createTrapReceiver(final ProcessContext context, final ProcessSessionFactory processSessionFactory, final ComponentLog logger) {
