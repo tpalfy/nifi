@@ -91,10 +91,7 @@ public class MainFlowAnalyzer implements FlowAnalyzer {
         analyzeComponent(
             versionedProcessor,
             flowAnalysisRuleNode -> flowAnalysisRuleNode.getFlowAnalysisRule().analyzeComponent(
-                flowAnalysisRuleNode.getName(),
-                flowAnalysisRuleNode.getFlowAnalysisRuleContext(),
-                versionedProcessor,
-                controllerServiceDetailsProvider
+                versionedProcessor, flowAnalysisRuleNode.getFlowAnalysisRuleContext()
             )
         );
     }
@@ -115,10 +112,7 @@ public class MainFlowAnalyzer implements FlowAnalyzer {
         analyzeComponent(
             versionedControllerService,
             flowAnalysisRuleNode -> flowAnalysisRuleNode.getFlowAnalysisRule().analyzeComponent(
-                flowAnalysisRuleNode.getName(),
-                flowAnalysisRuleNode.getFlowAnalysisRuleContext(),
-                versionedControllerService,
-                controllerServiceDetailsProvider
+                versionedControllerService, flowAnalysisRuleNode.getFlowAnalysisRuleContext()
             )
         );
     }
@@ -149,10 +143,8 @@ public class MainFlowAnalyzer implements FlowAnalyzer {
 
                 try {
                     Collection<GroupAnalysisResult> analysisResults = flowAnalysisRuleNode.getFlowAnalysisRule().analyzeProcessGroup(
-                        flowAnalysisRuleNode.getName(),
-                        flowAnalysisRuleNode.getFlowAnalysisRuleContext(),
                         processGroup,
-                        controllerServiceDetailsProvider
+                        flowAnalysisRuleNode.getFlowAnalysisRuleContext()
                     );
 
                     analysisResults.forEach(analysisResult -> {

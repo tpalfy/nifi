@@ -75,7 +75,7 @@ public class StandardFlowAnalysisRuleNode extends AbstractFlowAnalysisRuleNode i
 
     @Override
     public Class<?> getComponentClass() {
-        return getFlowAnalysisRuleContext().getClass();
+        return getFlowAnalysisRule().getClass();
     }
 
     @Override
@@ -86,6 +86,7 @@ public class StandardFlowAnalysisRuleNode extends AbstractFlowAnalysisRuleNode i
     @Override
     public FlowAnalysisRuleContext getFlowAnalysisRuleContext() {
         return new StandardFlowAnalysisRuleContext(
+            getName(),
             getFlowAnalysisRule(),
             getEffectivePropertyValues(),
             flowController,

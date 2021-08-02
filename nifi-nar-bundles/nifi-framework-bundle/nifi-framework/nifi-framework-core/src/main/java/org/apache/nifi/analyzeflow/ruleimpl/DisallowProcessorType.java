@@ -19,7 +19,6 @@ package org.apache.nifi.analyzeflow.ruleimpl;
 import org.apache.nifi.annotation.documentation.CapabilityDescription;
 import org.apache.nifi.annotation.documentation.Tags;
 import org.apache.nifi.components.PropertyDescriptor;
-import org.apache.nifi.flow.VersionedControllerService;
 import org.apache.nifi.flow.VersionedProcessor;
 import org.apache.nifi.flowanalysis.AbstractFlowAnalysisRule;
 import org.apache.nifi.flowanalysis.ComponentAnalysisResult;
@@ -30,7 +29,6 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
-import java.util.function.Function;
 
 @Tags({"component", "processor", "type"})
 @CapabilityDescription("Produces rule violations for each processor of a given type.")
@@ -58,12 +56,7 @@ public class DisallowProcessorType extends AbstractFlowAnalysisRule {
     }
 
     @Override
-    public Optional<ComponentAnalysisResult> analyzeComponent(
-        String ruleName,
-        FlowAnalysisRuleContext context,
-        Object component,
-        Function<String, VersionedControllerService> versionedControllerServiceProvider
-    ) {
+    public Optional<ComponentAnalysisResult> analyzeComponent(Object component, FlowAnalysisRuleContext context) {
         String processorType = context.getProperty(PROCESSOR_TYPE).getValue();
 
         if (component instanceof VersionedProcessor) {

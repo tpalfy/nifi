@@ -19,17 +19,29 @@ import org.apache.nifi.cluster.protocol.NodeIdentifier;
 import org.apache.nifi.components.PropertyDescriptor;
 import org.apache.nifi.components.state.StateManager;
 import org.apache.nifi.controller.FlowController;
+import org.apache.nifi.controller.VersionedControllerServiceLookup;
 import org.apache.nifi.controller.flow.FlowManager;
+import org.apache.nifi.controller.service.ControllerServiceNode;
+import org.apache.nifi.controller.service.ControllerServiceProvider;
+import org.apache.nifi.flow.VersionedControllerService;
 import org.apache.nifi.flowanalysis.FlowAnalysisRuleContext;
 import org.apache.nifi.flowanalysis.FlowAnalysisRule;
+import org.apache.nifi.nar.ExtensionManager;
 import org.apache.nifi.parameter.ParameterLookup;
 import org.apache.nifi.registry.VariableRegistry;
+import org.apache.nifi.registry.flow.mapping.NiFiRegistryFlowMapper;
+
+import java.util.Collections;
+import java.util.HashMap;
 import java.util.Map;
+import java.util.function.Function;
 
 public class StandardFlowAnalysisRuleContext extends AbstractFlowAnalysisRuleContext implements FlowAnalysisRuleContext {
+    private final String ruleName;
     private final FlowController flowController;
 
     public StandardFlowAnalysisRuleContext(
+        String ruleName,
         FlowAnalysisRule flowAnalysisRule,
         Map<PropertyDescriptor, String> properties,
         FlowController flowController,
@@ -37,6 +49,7 @@ public class StandardFlowAnalysisRuleContext extends AbstractFlowAnalysisRuleCon
         VariableRegistry variableRegistry
     ) {
         super(flowAnalysisRule, properties, flowController.getControllerServiceProvider(), flowController.getBulletinRepository(), parameterLookup, variableRegistry);
+        this.ruleName = ruleName;
         this.flowController = flowController;
     }
 
@@ -59,5 +72,33 @@ public class StandardFlowAnalysisRuleContext extends AbstractFlowAnalysisRuleCon
     public String getClusterNodeIdentifier() {
         final NodeIdentifier nodeId = flowController.getNodeId();
         return nodeId == null ? null : nodeId.getId();
+    }
+
+    @Override
+    public VersionedControllerServiceLookup getVersionedControllerServiceLookup() {
+        VersionedControllerServiceLookup versionedControllerServiceLookup = id -> {
+            ControllerServiceProvider controllerServiceProvider = flowController.getControllerServiceProvider();
+            ExtensionManager extensionManager = flowController.getExtensionManager();
+
+            NiFiRegistryFlowMapper mapper = new NiFiRegistryFlowMapper(extensionManager, Function.identity());
+
+            ControllerServiceNode controllerServiceNode = controllerServiceProvider.getControllerServiceNode(id);
+
+            VersionedControllerService versionedControllerService = mapper.mapControllerService(
+                controllerServiceNode,
+                controllerServiceProvider,
+                Collections.emptySet(),
+                new HashMap<>()
+            );
+
+            return versionedControllerService;
+        };
+
+        return versionedControllerServiceLookup;
+    }
+
+    @Override
+    public String getRuleName() {
+        return ruleName;
     }
 }

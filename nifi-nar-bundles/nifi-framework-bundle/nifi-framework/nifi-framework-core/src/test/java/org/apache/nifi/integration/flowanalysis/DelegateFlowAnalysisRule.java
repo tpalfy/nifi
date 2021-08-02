@@ -17,7 +17,6 @@
 package org.apache.nifi.integration.flowanalysis;
 
 import org.apache.nifi.components.PropertyDescriptor;
-import org.apache.nifi.flow.VersionedControllerService;
 import org.apache.nifi.flow.VersionedProcessGroup;
 import org.apache.nifi.flowanalysis.AbstractFlowAnalysisRule;
 import org.apache.nifi.flowanalysis.ComponentAnalysisResult;
@@ -28,7 +27,6 @@ import org.apache.nifi.flowanalysis.GroupAnalysisResult;
 import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
-import java.util.function.Function;
 
 public class DelegateFlowAnalysisRule extends AbstractFlowAnalysisRule {
     private FlowAnalysisRule delegate;
@@ -37,23 +35,13 @@ public class DelegateFlowAnalysisRule extends AbstractFlowAnalysisRule {
     }
 
     @Override
-    public Optional<ComponentAnalysisResult> analyzeComponent(
-        String ruleName,
-        FlowAnalysisRuleContext context,
-        Object component,
-        Function<String, VersionedControllerService> versionedControllerServiceProvider
-    ) {
-        return delegate.analyzeComponent(ruleName, context, component, versionedControllerServiceProvider);
+    public Optional<ComponentAnalysisResult> analyzeComponent(Object component, FlowAnalysisRuleContext context) {
+        return delegate.analyzeComponent(component, context);
     }
 
     @Override
-    public Collection<GroupAnalysisResult> analyzeProcessGroup(
-        String ruleName,
-        FlowAnalysisRuleContext context,
-        VersionedProcessGroup processGroup,
-        Function<String, VersionedControllerService> versionedControllerServiceProvider
-    ) {
-        return delegate.analyzeProcessGroup(ruleName, context, processGroup, versionedControllerServiceProvider);
+    public Collection<GroupAnalysisResult> analyzeProcessGroup(VersionedProcessGroup processGroup, FlowAnalysisRuleContext context) {
+        return delegate.analyzeProcessGroup(processGroup, context);
     }
 
     @Override

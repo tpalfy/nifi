@@ -20,6 +20,7 @@ import org.apache.nifi.components.PropertyDescriptor;
 import org.apache.nifi.components.state.StateManager;
 import org.apache.nifi.context.PropertyContext;
 import org.apache.nifi.controller.ControllerServiceLookup;
+import org.apache.nifi.controller.VersionedControllerServiceLookup;
 import org.apache.nifi.reporting.Bulletin;
 import org.apache.nifi.reporting.BulletinRepository;
 import org.apache.nifi.reporting.Severity;
@@ -32,6 +33,10 @@ import java.util.Map;
  * configuration supplied by the user.
  */
 public interface FlowAnalysisRuleContext extends PropertyContext {
+    /**
+     * @return the name of the rule that is being triggered
+     */
+    String getRuleName();
 
     /**
      * @return a Map of all known {@link PropertyDescriptor}s to their
@@ -77,6 +82,12 @@ public interface FlowAnalysisRuleContext extends PropertyContext {
      * Controller Services
      */
     ControllerServiceLookup getControllerServiceLookup();
+
+    /**
+     * @return the {@link VersionedControllerServiceLookup} which can be used to obtain
+     * Versioned Controller Services during flow analysis
+     */
+    VersionedControllerServiceLookup getVersionedControllerServiceLookup();
 
     /**
      * @return the StateManager that can be used to store and retrieve state for this component
