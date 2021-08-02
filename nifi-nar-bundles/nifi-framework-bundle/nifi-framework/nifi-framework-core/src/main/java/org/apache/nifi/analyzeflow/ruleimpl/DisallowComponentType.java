@@ -19,7 +19,7 @@ package org.apache.nifi.analyzeflow.ruleimpl;
 import org.apache.nifi.annotation.documentation.CapabilityDescription;
 import org.apache.nifi.annotation.documentation.Tags;
 import org.apache.nifi.components.PropertyDescriptor;
-import org.apache.nifi.flow.VersionedProcessor;
+import org.apache.nifi.flow.VersionedExtensionComponent;
 import org.apache.nifi.flowanalysis.AbstractFlowAnalysisRule;
 import org.apache.nifi.flowanalysis.ComponentAnalysisResult;
 import org.apache.nifi.flowanalysis.FlowAnalysisRuleContext;
@@ -30,13 +30,13 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 
-@Tags({"component", "processor", "type"})
-@CapabilityDescription("Produces rule violations for each processor of a given type.")
-public class DisallowProcessorType extends AbstractFlowAnalysisRule {
-    public static final PropertyDescriptor PROCESSOR_TYPE = new PropertyDescriptor.Builder()
-        .name("processor-type")
-        .displayName("Processor Type")
-        .description("Processors of the given type will produce a rule violation (i.e. they shouldn't exist).")
+@Tags({"component", "processor",  "controller service", "type"})
+@CapabilityDescription("Produces rule violations for each component (i.e. processors or controller services) of a given type.")
+public class DisallowComponentType extends AbstractFlowAnalysisRule {
+    public static final PropertyDescriptor COMPONENT_TYPE = new PropertyDescriptor.Builder()
+        .name("component-type")
+        .displayName("Component Type")
+        .description("Components of the given type will produce a rule violation (i.e. they shouldn't exist).")
         .required(true)
         .addValidator(StandardValidators.NON_BLANK_VALIDATOR)
         .defaultValue(null)
@@ -46,7 +46,7 @@ public class DisallowProcessorType extends AbstractFlowAnalysisRule {
 
     static {
         List<PropertyDescriptor> _propertyDescriptors = new ArrayList<>();
-        _propertyDescriptors.add(PROCESSOR_TYPE);
+        _propertyDescriptors.add(COMPONENT_TYPE);
         propertyDescriptors = Collections.unmodifiableList(_propertyDescriptors);
     }
 
@@ -57,17 +57,17 @@ public class DisallowProcessorType extends AbstractFlowAnalysisRule {
 
     @Override
     public Optional<ComponentAnalysisResult> analyzeComponent(Object component, FlowAnalysisRuleContext context) {
-        String processorType = context.getProperty(PROCESSOR_TYPE).getValue();
+        String componentType = context.getProperty(COMPONENT_TYPE).getValue();
 
-        if (component instanceof VersionedProcessor) {
-            VersionedProcessor processor = (VersionedProcessor) component;
+        if (component instanceof VersionedExtensionComponent) {
+            VersionedExtensionComponent versionedExtensionComponent = (VersionedExtensionComponent) component;
 
-            String encounteredProcessorType = processor.getType();
-            encounteredProcessorType = encounteredProcessorType.substring(encounteredProcessorType.lastIndexOf(".") + 1);
+            String encounteredComponentType = versionedExtensionComponent.getType();
+            String encounteredSimpleComponentType = encounteredComponentType.substring(encounteredComponentType.lastIndexOf(".") + 1);
 
-            if (encounteredProcessorType.equals(processorType)) {
+            if (encounteredComponentType.equals(componentType) || encounteredSimpleComponentType.equals(componentType)) {
                 ComponentAnalysisResult componentAnalysisResult = new ComponentAnalysisResult(
-                    "'" + processorType + "' is not allowed!"
+                    "'" + componentType + "' is not allowed!"
                 );
 
                 return Optional.of(componentAnalysisResult);
