@@ -46,6 +46,7 @@ import org.apache.nifi.registry.flow.FlowRegistryClient;
 import org.apache.nifi.remote.PublicPort;
 import org.apache.nifi.remote.RemoteGroupPort;
 import org.apache.nifi.util.ReflectionUtils;
+import org.apache.nifi.validation.FlowAnalysisContext;
 
 import java.util.Collections;
 import java.util.HashSet;
@@ -75,6 +76,7 @@ public abstract class AbstractFlowManager implements FlowManager {
     private final BooleanSupplier flowInitializedCheck;
 
     private volatile ControllerServiceProvider controllerServiceProvider;
+    private volatile FlowAnalysisContext flowAnalysisContext;
     private volatile ProcessGroup rootGroup;
 
     public AbstractFlowManager(final FlowFileEventRepository flowFileEventRepository, final ParameterContextManager parameterContextManager,
@@ -98,7 +100,10 @@ public abstract class AbstractFlowManager implements FlowManager {
     }
 
     public void onProcessGroupRemoved(final ProcessGroup group) {
-        allProcessGroups.remove(group.getIdentifier());
+        String identifier = group.getIdentifier();
+        allProcessGroups.remove(identifier);
+
+        flowAnalysisContext.removeRuleViolationsForSubject(identifier);
     }
 
     public void onProcessorAdded(final ProcessorNode procNode) {
@@ -109,6 +114,8 @@ public abstract class AbstractFlowManager implements FlowManager {
         String identifier = procNode.getIdentifier();
         flowFileEventRepository.purgeTransferEvents(identifier);
         allProcessors.remove(identifier);
+
+        flowAnalysisContext.removeRuleViolationsForSubject(identifier);
     }
 
     public Connectable findConnectable(final String id) {
@@ -156,6 +163,8 @@ public abstract class AbstractFlowManager implements FlowManager {
         String identifier = connection.getIdentifier();
         flowFileEventRepository.purgeTransferEvents(identifier);
         allConnections.remove(identifier);
+
+        flowAnalysisContext.removeRuleViolationsForSubject(identifier);
     }
 
     public Connection getConnection(final String id) {
@@ -310,6 +319,8 @@ public abstract class AbstractFlowManager implements FlowManager {
         String identifier = inputPort.getIdentifier();
         flowFileEventRepository.purgeTransferEvents(identifier);
         allInputPorts.remove(identifier);
+
+        flowAnalysisContext.removeRuleViolationsForSubject(identifier);
     }
 
     public Port getInputPort(final String id) {
@@ -324,6 +335,8 @@ public abstract class AbstractFlowManager implements FlowManager {
         String identifier = outputPort.getIdentifier();
         flowFileEventRepository.purgeTransferEvents(identifier);
         allOutputPorts.remove(identifier);
+
+        flowAnalysisContext.removeRuleViolationsForSubject(identifier);
     }
 
     public Port getOutputPort(final String id) {
@@ -338,6 +351,8 @@ public abstract class AbstractFlowManager implements FlowManager {
         String identifier = funnel.getIdentifier();
         flowFileEventRepository.purgeTransferEvents(identifier);
         allFunnels.remove(identifier);
+
+        flowAnalysisContext.removeRuleViolationsForSubject(identifier);
     }
 
     public Funnel getFunnel(final String id) {
@@ -500,4 +515,13 @@ public abstract class AbstractFlowManager implements FlowManager {
     }
 
     protected abstract Authorizable getParameterContextParent();
+
+    public void setFlowAnalysisContext(FlowAnalysisContext flowAnalysisContext) {
+        this.flowAnalysisContext = flowAnalysisContext;
+    }
+
+    @Override
+    public FlowAnalysisContext getFlowAnalysisContext() {
+        return flowAnalysisContext;
+    }
 }

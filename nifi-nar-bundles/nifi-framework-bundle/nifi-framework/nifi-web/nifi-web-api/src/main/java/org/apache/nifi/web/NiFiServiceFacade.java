@@ -139,7 +139,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
-import java.util.concurrent.ConcurrentMap;
 import java.util.function.Function;
 
 /**
@@ -2525,16 +2524,17 @@ public interface NiFiServiceFacade {
     void analyzeFlow(String processGroupId);
 
     /**
-     * @return a multidimensional map of the current rule violations (see {@link FlowAnalysisContext#getRuleViolations()})
+     * @return all current rule violations
      */
-    ConcurrentMap<String, ConcurrentMap<String, ConcurrentMap<String, RuleViolation>>> getRuleViolations();
+    Collection<RuleViolation> getAllRuleViolations();
 
     /**
      * Update an existing violation
-     * @param subjectId see {@link RuleViolation#getSubjectId()}
      * @param scope see {@link RuleViolation#getScope()}
+     * @param subjectId see {@link RuleViolation#getSubjectId()}
      * @param ruleId see {@link RuleViolation#getRuleId()}
+     * @param issueId see {@link RuleViolation#getIssueId()}
      * @param enabled see {@link RuleViolation#isEnabled()}
      */
-    void updateRuleViolation(String subjectId, String scope, String ruleId, Boolean enabled);
+    void updateRuleViolation(String scope, String subjectId, String ruleId, String issueId, Boolean enabled);
 }

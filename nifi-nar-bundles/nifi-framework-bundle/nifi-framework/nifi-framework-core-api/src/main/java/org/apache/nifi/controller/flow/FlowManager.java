@@ -33,6 +33,7 @@ import org.apache.nifi.groups.RemoteProcessGroup;
 import org.apache.nifi.parameter.Parameter;
 import org.apache.nifi.parameter.ParameterContext;
 import org.apache.nifi.parameter.ParameterContextManager;
+import org.apache.nifi.validation.FlowAnalysisContext;
 import org.apache.nifi.web.api.dto.FlowSnippetDTO;
 
 import java.net.URL;
@@ -362,4 +363,6 @@ public interface FlowManager {
     void removeFlowAnalysisRule(FlowAnalysisRuleNode reportingTask);
 
     Set<FlowAnalysisRuleNode> getAllFlowAnalysisRules();
+
+    FlowAnalysisContext getFlowAnalysisContext();
 }

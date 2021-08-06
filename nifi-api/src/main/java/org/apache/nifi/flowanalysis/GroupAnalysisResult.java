@@ -23,51 +23,87 @@ import java.util.StringJoiner;
 
 /**
  * Holds information about a {@link FlowAnalysisRule} violation after analyzing (a part of) the flow, represented by a process group.
- *  One such analysis can result in multiple instances of this class.
+ * One such analysis can result in multiple instances of this class.
  */
 public class GroupAnalysisResult {
-    private final Optional<String> subViolationId;
-    private final Optional<VersionedComponent> component;
+    private final String issueId;
     private final String message;
+    private final Optional<String> childGroupId;
+    private final Optional<VersionedComponent> component;
 
-    /**
-     * Creates a result object that corresponds to the entirety of the analyzed process group.
-     * @param subViolationId an id that represents the type of general violation within the same rule check.
-     *                       Must be unique within the analysis run of the same rule.
-     * @param messages the rule violation message
-     */
-    public GroupAnalysisResult(String subViolationId, String messages) {
-        this(Optional.of(subViolationId), Optional.empty(), messages);
+    private GroupAnalysisResult(String issueId, String message) {
+        this(issueId, message, Optional.empty(), Optional.empty());
     }
 
-    /**
-     * Creates a result object that corresponds to a component within the analyzed process group.
-     * @param component the component which this result corresponds to
-     * @param messages the rule violation message
-     */
-    public GroupAnalysisResult(VersionedComponent component, String messages) {
-        this(Optional.empty(), Optional.of(component), messages);
+    private GroupAnalysisResult(String childGroupId, String issueId, String message) {
+        this(issueId, message, Optional.of(childGroupId), Optional.empty());
     }
 
-    private GroupAnalysisResult(Optional<String> subViolationId, Optional<VersionedComponent> component, String messages) {
-        this.subViolationId = subViolationId;
+    private GroupAnalysisResult(VersionedComponent component, String issueId, String message) {
+        this(issueId, message, Optional.empty(), Optional.of(component));
+    }
+
+    private GroupAnalysisResult(String issueId, String message, Optional<String> childGroupId, Optional<VersionedComponent> component) {
+        this.issueId = issueId;
+        this.message = message;
+        this.childGroupId = childGroupId;
         this.component = component;
-        this.message = messages;
-    }
-
-
-    /**
-     * @return an id that represents the unique type of general violation within the same rule check
-     */
-    public Optional<String> getSubViolationId() {
-        return subViolationId;
     }
 
     /**
-     * @return the component this result corresponds to or empty if this result corresponds to the entirety of the process group that was analyzed
+     * Create a new analysis result tied to the currently analyzed process group
+     *
+     * @param issueId A rule-defined id that corresponds to a unique type of issue recognized by the rule.
+     *                Newer analysis runs may produce a result with the same issueId in which case the old one will
+     *                be overwritten (or recreated if it is the same in other aspects as well).
+     *                However if the previous result was disabled the new one will be disabled as well.
+     * @param message A violation message
+     * @return a new analysis result instance tied to the currently analyzed process group
      */
-    public Optional<VersionedComponent> getComponent() {
-        return component;
+    public static GroupAnalysisResult newResultForThisGroup(String issueId, String message) {
+        return new GroupAnalysisResult(issueId, message);
+    }
+
+    /**
+     * Create a new analysis result tied to a child process group of the currently analyzed one
+     *
+     * @param childGroupId The id of the child process group this result is tied to
+     * @param issueId      A rule-defined id that corresponds to a unique type of issue recognized by the rule.
+     *                     Newer analysis runs may produce a result with the same issueId in which case the old one will
+     *                     be overwritten (or recreated if it is the same in other aspects as well).
+     *                     However if the previous result was disabled the new one will be disabled as well.
+     * @param message      A violation message
+     * @return a new analysis result tied to a child process group of the currently analyzed one
+     */
+    public static GroupAnalysisResult newResultForChildGroup(String childGroupId, String issueId, String message) {
+        return new GroupAnalysisResult(childGroupId, issueId, message);
+    }
+
+    /**
+     * Create a new analysis result tied to a component.
+     * Note that the result will be scoped to the process group of the component and not the currently analyzed group.
+     * This means that even when a new analysis is run against that process group, this result will become obsolete.
+     *
+     * @param component The component that this result is tied to
+     * @param issueId   A rule-defined id that corresponds to a unique type of issue recognized by the rule.
+     *                  Newer analysis runs may produce a result with the same issueId in which case the old one will
+     *                  be overwritten (or recreated if it is the same in other aspects as well).
+     *                  However if the previous result was disabled the new one will be disabled as well.
+     * @param message   A violation message
+     * @return a new analysis result tied to a component
+     */
+    public static GroupAnalysisResult newResultForComponent(VersionedComponent component, String issueId, String message) {
+        return new GroupAnalysisResult(component, issueId, message);
+    }
+
+    /**
+     * @return A rule-defined id that corresponds to a unique type of issue recognized by the rule.
+     * Newer analysis runs may produce a result with the same issueId in which case the old one will
+     * be overwritten (or recreated if it is the same in other aspects as well).
+     * However if the previous result was disabled the new one will be disabled as well.
+     */
+    public String getIssueId() {
+        return issueId;
     }
 
     /**
@@ -77,11 +113,29 @@ public class GroupAnalysisResult {
         return message;
     }
 
+    /**
+     * @return the violation my be tied to a child process group of the currently analyzed one. This may be important
+     * when a subsequent analysis is run against that child process group directly.
+     * The reason being all results tied to a process group is cleared when a new analysis is run.
+     */
+    public Optional<String> getChildGroupId() {
+        return childGroupId;
+    }
+
+    /**
+     * @return the component this result corresponds to or empty if this result corresponds to the entirety of the process group that was analyzed
+     */
+    public Optional<VersionedComponent> getComponent() {
+        return component;
+    }
+
     @Override
     public String toString() {
         return new StringJoiner(", ", GroupAnalysisResult.class.getSimpleName() + "[", "]")
-            .add("component='" + component + "'")
+            .add("issueId='" + issueId + "'")
             .add("message='" + message + "'")
+            .add("childGroupId='" + childGroupId + "'")
+            .add("component='" + component + "'")
             .toString();
     }
 }

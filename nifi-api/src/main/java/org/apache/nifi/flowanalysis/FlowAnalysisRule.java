@@ -17,12 +17,12 @@
 package org.apache.nifi.flowanalysis;
 
 import org.apache.nifi.components.ConfigurableComponent;
+import org.apache.nifi.flow.VersionedComponent;
 import org.apache.nifi.flow.VersionedProcessGroup;
 import org.apache.nifi.reporting.InitializationException;
 
 import java.util.Collection;
 import java.util.Collections;
-import java.util.Optional;
 
 /**
  * A single rule that can analyze components or a flow (represented by a process group)
@@ -32,31 +32,34 @@ public interface FlowAnalysisRule extends ConfigurableComponent {
      * Provides the Flow Analysis Rule with access to objects that may be of use
      * throughout its lifecycle
      *
-     * @param config of initialization context
+     * @param config see {@link FlowAnalysisRuleInitializationContext}
      * @throws org.apache.nifi.reporting.InitializationException if unable to initialize
      */
     void initialize(FlowAnalysisRuleInitializationContext config) throws InitializationException;
 
     /**
      * Analyze a component provided by the framework.
-     *  A callback method invoked by the framework.
-     *  It should be expected that this method will be called with any and all available components.
+     * This is a callback method invoked by the framework.
+     * It should be expected that this method will be called with any and all available components.
+     *
      * @param component the component to be analyzed
-     * @param context see {@link FlowAnalysisRuleContext}
-     * @return an optional {@link ComponentAnalysisResult} as the result of the analysis of the given component
+     * @param context   see {@link FlowAnalysisRuleContext}
+     * @return a collection of {@link ComponentAnalysisResult} as the result of the analysis of the given component
      */
-    default Optional<ComponentAnalysisResult> analyzeComponent(Object component, FlowAnalysisRuleContext context) {
-        return Optional.empty();
+    default Collection<ComponentAnalysisResult> analyzeComponent(VersionedComponent component, FlowAnalysisRuleContext context) {
+        return Collections.emptySet();
     }
 
     /**
      * Analyze a flow or a part of it, represented by a process group.
-     *  A callback method invoked by the framework.
-     *  It should be expected that this method will be called by the root process group or any of its child process groups.
+     * This is a callback method invoked by the framework.
+     * It should be expected that this method will be called by the root process group or any of its child process groups.
+     *
      * @param processGroup the process group to be analyzed
-     * @param context see {@link FlowAnalysisRuleContext}
-     * @return a collection of {@link GroupAnalysisResult} as the result of the analysis of the given component.
-     *  One {@link GroupAnalysisResult} in the collection can either refer to a component within the analyzed process group or the entirety of the group
+     * @param context      see {@link FlowAnalysisRuleContext}
+     * @return a collection of {@link GroupAnalysisResult} as the result of the analysis.
+     * One {@link GroupAnalysisResult} in the collection can either refer to a component within the analyzed process group,
+     * to a child process group or the entirety of the process group
      */
     default Collection<GroupAnalysisResult> analyzeProcessGroup(VersionedProcessGroup processGroup, FlowAnalysisRuleContext context) {
         return Collections.emptySet();

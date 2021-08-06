@@ -77,7 +77,6 @@ import org.apache.nifi.reporting.BulletinRepository;
 import org.apache.nifi.util.FormatUtils;
 import org.apache.nifi.util.NiFiProperties;
 import org.apache.nifi.util.ReflectionUtils;
-import org.apache.nifi.validation.FlowAnalysisContext;
 import org.apache.nifi.web.api.dto.FlowSnippetDTO;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -109,7 +108,6 @@ public class StandardFlowManager extends AbstractFlowManager implements FlowMana
     private final Authorizer authorizer;
     private final SSLContext sslContext;
     private final FlowController flowController;
-    private FlowAnalysisContext flowAnalysisContext;
     private FlowAnalyzer flowAnalyzer;
 
     private final ConcurrentMap<String, ControllerServiceNode> rootControllerServices = new ConcurrentHashMap<>();
@@ -333,7 +331,7 @@ public class StandardFlowManager extends AbstractFlowManager implements FlowMana
             .addClasspathUrls(additionalUrls)
             .kerberosConfig(flowController.createKerberosConfig(nifiProperties))
             .extensionManager(extensionManager)
-            .flowAnalysisContext(flowAnalysisContext)
+            .flowAnalysisContext(getFlowAnalysisContext())
             .flowAnalyzer(flowAnalyzer)
             .buildProcessor();
 
@@ -453,7 +451,7 @@ public class StandardFlowManager extends AbstractFlowManager implements FlowMana
             .kerberosConfig(flowController.createKerberosConfig(nifiProperties))
             .flowController(flowController)
             .extensionManager(extensionManager)
-            .flowAnalysisContext(flowAnalysisContext)
+            .flowAnalysisContext(getFlowAnalysisContext())
             .flowAnalyzer(flowAnalyzer)
             .buildFlowAnalysisRuleNode();
 
@@ -534,6 +532,8 @@ public class StandardFlowManager extends AbstractFlowManager implements FlowMana
 
         extensionManager.removeInstanceClassLoader(service.getIdentifier());
 
+        getFlowAnalysisContext().removeRuleViolationsForSubject(service.getIdentifier());
+
         logger.info("{} removed from Flow Controller", service);
     }
 
@@ -558,7 +558,7 @@ public class StandardFlowManager extends AbstractFlowManager implements FlowMana
             .kerberosConfig(flowController.createKerberosConfig(nifiProperties))
             .stateManagerProvider(flowController.getStateManagerProvider())
             .extensionManager(extensionManager)
-            .flowAnalysisContext(flowAnalysisContext)
+            .flowAnalysisContext(getFlowAnalysisContext())
             .flowAnalyzer(flowAnalyzer)
             .buildControllerService();
 
@@ -605,16 +605,8 @@ public class StandardFlowManager extends AbstractFlowManager implements FlowMana
         return flowController;
     }
 
-    public void setFlowAnalysisContext(FlowAnalysisContext flowAnalysisContext) {
-        this.flowAnalysisContext = flowAnalysisContext;
-    }
-
     public void setFlowAnalyzer(FlowAnalyzer flowAnalyzer) {
         this.flowAnalyzer = flowAnalyzer;
-    }
-
-    public FlowAnalysisContext getFlowAnalysisContext() {
-        return flowAnalysisContext;
     }
 
     public FlowAnalyzer getFlowAnalyzer() {

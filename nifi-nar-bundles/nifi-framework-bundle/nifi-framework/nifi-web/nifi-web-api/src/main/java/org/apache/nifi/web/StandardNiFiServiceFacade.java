@@ -353,7 +353,6 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.UUID;
-import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Function;
 import java.util.function.Predicate;
@@ -5768,16 +5767,16 @@ public class StandardNiFiServiceFacade implements NiFiServiceFacade {
     }
 
     @Override
-    public void updateRuleViolation(String subjectId, String scope, String ruleId, Boolean enabled) {
-        flowAnalysisContext.updateRuleViolation(subjectId, scope, ruleId, enabled);
+    public void updateRuleViolation(String scope, String subjectId, String ruleId, String issueId, Boolean enabled) {
+        flowAnalysisContext.updateRuleViolation(scope, subjectId, ruleId, issueId, enabled);
         controllerFacade.save();
     }
 
     @Override
-    public ConcurrentMap<String, ConcurrentMap<String, ConcurrentMap<String, RuleViolation>>> getRuleViolations() {
-        ConcurrentMap<String, ConcurrentMap<String, ConcurrentMap<String, RuleViolation>>> ruleViolations = flowAnalysisContext.getRuleViolations();
+    public Collection<RuleViolation> getAllRuleViolations() {
+        Collection<RuleViolation> allRuleViolations = flowAnalysisContext.getAllRuleViolations();
 
-        return ruleViolations;
+        return allRuleViolations;
     }
 
     /* reusable function declarations for converting ids to tenant entities */

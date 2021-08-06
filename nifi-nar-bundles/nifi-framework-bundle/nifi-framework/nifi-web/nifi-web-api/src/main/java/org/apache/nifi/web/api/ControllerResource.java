@@ -519,16 +519,13 @@ public class ControllerResource extends ApplicationResource {
     }
 
     private FlowAnalysisResultEntity createFlowAnalysisResultEntity() {
-        Set<FlowAnalysisResultDTO> analysisResults = serviceFacade.getRuleViolations()
-            .values().stream()
-            .map(Map::values).flatMap(Collection::stream)
-            .map(Map::values).flatMap(Collection::stream)
+        Set<FlowAnalysisResultDTO> analysisResults = serviceFacade.getAllRuleViolations().stream()
             .map(ruleViolation -> {
                 FlowAnalysisResultDTO resultDTO = new FlowAnalysisResultDTO();
 
                 resultDTO.setRuleType(ruleViolation.getRuleType().toString());
                 resultDTO.setSubjectId(ruleViolation.getSubjectId());
-                resultDTO.setScope(ruleViolation.getScope());
+                resultDTO.setScope(ruleViolation.getIssueId());
                 resultDTO.setRuleId(ruleViolation.getRuleId());
                 resultDTO.setViolationMessage(ruleViolation.getViolationMessage());
                 resultDTO.setEnabled(ruleViolation.isEnabled());
@@ -585,7 +582,7 @@ public class ControllerResource extends ApplicationResource {
             },
             null,
             (entity) -> {
-                serviceFacade.updateRuleViolation(entity.getSubjectId(), entity.getScope(), entity.getRuleId(), entity.getEnabled());
+                serviceFacade.updateRuleViolation(entity.getScope(), entity.getSubjectId(), entity.getRuleId(), entity.getIssueId(), entity.getEnabled());
 
                 return generateOkResponse(entity).build();
             }

@@ -17,6 +17,7 @@
 package org.apache.nifi.integration.flowanalysis;
 
 import org.apache.nifi.components.PropertyDescriptor;
+import org.apache.nifi.flow.VersionedComponent;
 import org.apache.nifi.flow.VersionedProcessGroup;
 import org.apache.nifi.flowanalysis.AbstractFlowAnalysisRule;
 import org.apache.nifi.flowanalysis.ComponentAnalysisResult;
@@ -26,7 +27,6 @@ import org.apache.nifi.flowanalysis.GroupAnalysisResult;
 
 import java.util.Collection;
 import java.util.List;
-import java.util.Optional;
 
 public class DelegateFlowAnalysisRule extends AbstractFlowAnalysisRule {
     private FlowAnalysisRule delegate;
@@ -35,7 +35,7 @@ public class DelegateFlowAnalysisRule extends AbstractFlowAnalysisRule {
     }
 
     @Override
-    public Optional<ComponentAnalysisResult> analyzeComponent(Object component, FlowAnalysisRuleContext context) {
+    public Collection<ComponentAnalysisResult> analyzeComponent(VersionedComponent component, FlowAnalysisRuleContext context) {
         return delegate.analyzeComponent(component, context);
     }
 

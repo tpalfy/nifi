@@ -570,6 +570,8 @@ public class StandardControllerServiceProvider implements ControllerServiceProvi
         LogRepositoryFactory.removeRepository(serviceNode.getIdentifier());
         extensionManager.removeInstanceClassLoader(serviceNode.getIdentifier());
         serviceCache.remove(serviceNode.getIdentifier());
+
+        flowManager.getFlowAnalysisContext().removeRuleViolationsForSubject(serviceNode.getIdentifier());
     }
 
     @Override

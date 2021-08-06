@@ -618,12 +618,8 @@ public abstract class AbstractComponentNode implements ComponentNode {
             analyze();
 
             Optional.ofNullable(getValidationContextFactory().getFlowAnalysisContext())
-                .map(FlowAnalysisContext::getRuleViolations)
-                .map(idToScopeToRuleNameToViolation -> idToScopeToRuleNameToViolation.get(getIdentifier()))
-                .map(scopeToRuleNameToViolation -> scopeToRuleNameToViolation
-                    .values().stream()
-                    .flatMap(ruleNameToViolation -> ruleNameToViolation.values().stream())
-                )
+                .map(flowAnalysisContext -> flowAnalysisContext.getRuleViolationsForSubject(getIdentifier()))
+                .map(Collection::stream)
                 .ifPresent(ruleViolationStream -> ruleViolationStream
                     .filter(ruleViolation -> ruleViolation.getRuleType() == FlowAnalysisRuleType.POLICY)
                     .filter(RuleViolation::isEnabled)
