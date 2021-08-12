@@ -117,6 +117,7 @@ import org.apache.nifi.diagnostics.GarbageCollection;
 import org.apache.nifi.diagnostics.StorageUsage;
 import org.apache.nifi.diagnostics.SystemDiagnostics;
 import org.apache.nifi.expression.ExpressionLanguageScope;
+import org.apache.nifi.flowanalysis.AnalyzeFlowStatus;
 import org.apache.nifi.flowanalysis.FlowAnalysisRule;
 import org.apache.nifi.flowfile.FlowFilePrioritizer;
 import org.apache.nifi.flowfile.attributes.CoreAttributes;
@@ -421,8 +422,8 @@ public final class DtoFactory {
     /**
      * Creates a ComponentStateDTO for the given component and state's.
      *
-     * @param componentId component id
-     * @param localState local state
+     * @param componentId  component id
+     * @param localState   local state
      * @param clusterState cluster state
      * @return dto
      */
@@ -453,7 +454,7 @@ public final class DtoFactory {
     /**
      * Creates a StateMapDTO for the given scope and state map.
      *
-     * @param scope the scope
+     * @param scope    the scope
      * @param stateMap the state map
      * @return dto
      */
@@ -472,7 +473,7 @@ public final class DtoFactory {
         int count = 0;
         final List<StateEntryDTO> stateEntries = new ArrayList<>();
         final Set<Map.Entry<String, String>> entrySet = sortedState.entrySet();
-        for (final Iterator<Entry<String, String>> iter = entrySet.iterator(); iter.hasNext() && count++ < SortedStateUtils.MAX_COMPONENT_STATE_ENTRIES;) {
+        for (final Iterator<Entry<String, String>> iter = entrySet.iterator(); iter.hasNext() && count++ < SortedStateUtils.MAX_COMPONENT_STATE_ENTRIES; ) {
             final Map.Entry<String, String> entry = iter.next();
             final StateEntryDTO entryDTO = new StateEntryDTO();
             entryDTO.setKey(entry.getKey());
@@ -625,7 +626,7 @@ public final class DtoFactory {
 
         dto.setPenalized(summary.isPenalized());
         final long penaltyExpiration = summary.getPenaltyExpirationMillis() - now.getTime();
-        dto.setPenaltyExpiresIn(penaltyExpiration>=0?penaltyExpiration:0);
+        dto.setPenaltyExpiresIn(penaltyExpiration >= 0 ? penaltyExpiration : 0);
 
         dto.setPosition(summary.getPosition());
         dto.setSize(summary.getSize());
@@ -653,7 +654,7 @@ public final class DtoFactory {
 
         dto.setPenalized(record.isPenalized());
         final long penaltyExpiration = record.getPenaltyExpirationMillis() - now.getTime();
-        dto.setPenaltyExpiresIn(penaltyExpiration>=0?penaltyExpiration:0);
+        dto.setPenaltyExpiresIn(penaltyExpiration >= 0 ? penaltyExpiration : 0);
 
         dto.setSize(record.getSize());
         dto.setAttributes(record.getAttributes());
@@ -1125,7 +1126,7 @@ public final class DtoFactory {
                 final RemoteProcessGroupStatusDTO childRemoteProcessGroupStatusDto = createRemoteProcessGroupStatusDto(remoteProcessGroup, childRemoteProcessGroupStatus);
                 final PermissionsDTO remoteProcessGroupPermissions = createPermissionsDto(remoteProcessGroup);
                 childRemoteProcessGroupStatusDtoCollection.add(entityFactory.createRemoteProcessGroupStatusSnapshotEntity(childRemoteProcessGroupStatusDto.getAggregateSnapshot(),
-                        remoteProcessGroupPermissions));
+                    remoteProcessGroupPermissions));
             }
         }
 
@@ -1236,7 +1237,7 @@ public final class DtoFactory {
 
         snapshot.setId(connection.getIdentifier());
 
-        Map<String,Long> predictions = statusAnalytics.getPredictions();
+        Map<String, Long> predictions = statusAnalytics.getPredictions();
         snapshot.setPredictedMillisUntilBytesBackpressure(predictions.get("timeToBytesBackpressureMillis"));
         snapshot.setPredictedMillisUntilCountBackpressure(predictions.get("timeToCountBackpressureMillis"));
         snapshot.setPredictedBytesAtNextInterval(predictions.get("nextIntervalBytes"));
@@ -2017,7 +2018,7 @@ public final class DtoFactory {
      * Creates the PermissionsDTO based on the specified Authorizable for the given user
      *
      * @param authorizable authorizable
-     * @param user the NiFi User for which the Permissions are being created
+     * @param user         the NiFi User for which the Permissions are being created
      * @return dto
      */
     public PermissionsDTO createPermissionsDto(final Authorizable authorizable, final NiFiUser user) {
@@ -2493,7 +2494,7 @@ public final class DtoFactory {
     /**
      * Creates a ProcessGroupDTO from the specified ProcessGroup.
      *
-     * @param group group
+     * @param group   group
      * @param recurse recurse
      * @return dto
      */
@@ -2741,7 +2742,7 @@ public final class DtoFactory {
     /**
      * Creates a ProcessGroupContentDTO from the specified ProcessGroup.
      *
-     * @param group group
+     * @param group   group
      * @param recurse recurse
      * @return dto
      */
@@ -2841,8 +2842,8 @@ public final class DtoFactory {
 
     public Set<AffectedComponentEntity> createAffectedComponentEntities(final Set<ComponentNode> affectedComponents, final RevisionManager revisionManager) {
         return affectedComponents.stream()
-                .map(component -> createAffectedComponentEntity(component, revisionManager))
-                .collect(Collectors.toSet());
+            .map(component -> createAffectedComponentEntity(component, revisionManager))
+            .collect(Collectors.toSet());
     }
 
     public AffectedComponentEntity createAffectedComponentEntity(final ComponentNode componentNode, final RevisionManager revisionManager) {
@@ -3073,10 +3074,10 @@ public final class DtoFactory {
     /**
      * Gets the DocumentedTypeDTOs from the specified classes.
      *
-     * @param classes classes
-     * @param bundleGroupFilter if specified, must be member of bundle group
+     * @param classes              classes
+     * @param bundleGroupFilter    if specified, must be member of bundle group
      * @param bundleArtifactFilter if specified, must be member of bundle artifact
-     * @param typeFilter if specified, type must match
+     * @param typeFilter           if specified, type must match
      * @return dtos
      */
     public Set<DocumentedTypeDTO> fromDocumentedTypes(final Map<Class, Bundle> classes, final String bundleGroupFilter, final String bundleArtifactFilter, final String typeFilter) {
@@ -3119,9 +3120,9 @@ public final class DtoFactory {
      * Gets the DocumentedTypeDTOs from the specified classes.
      *
      * @param extensionDefinitions extensionDefinitions
-     * @param bundleGroupFilter if specified, must be member of bundle group
+     * @param bundleGroupFilter    if specified, must be member of bundle group
      * @param bundleArtifactFilter if specified, must be member of bundle artifact
-     * @param typeFilter if specified, type must match
+     * @param typeFilter           if specified, type must match
      * @return dtos
      */
     public Set<DocumentedTypeDTO> fromDocumentedTypes(final Set<ExtensionDefinition> extensionDefinitions, final String bundleGroupFilter, final String bundleArtifactFilter, final String typeFilter) {
@@ -3508,7 +3509,7 @@ public final class DtoFactory {
     /**
      * Creates a StorageUsageDTO from the specified StorageUsage.
      *
-     * @param identifier id
+     * @param identifier   id
      * @param storageUsage usage
      * @return dto
      */
@@ -3528,7 +3529,7 @@ public final class DtoFactory {
     /**
      * Creates a GarbageCollectionDTO from the specified GarbageCollection.
      *
-     * @param name name
+     * @param name              name
      * @param garbageCollection gc
      * @return dto
      */
@@ -3581,15 +3582,15 @@ public final class DtoFactory {
     /**
      * Creates a ProcessorDiagnosticsDTO from the given Processor and status information with some additional supporting information
      *
-     * @param procNode the processor to create diagnostics for
-     * @param procStatus the status of given processor
-     * @param bulletinRepo the bulletin repository
-     * @param flowController flowController
+     * @param procNode             the processor to create diagnostics for
+     * @param procStatus           the status of given processor
+     * @param bulletinRepo         the bulletin repository
+     * @param flowController       flowController
      * @param serviceEntityFactory function for creating a ControllerServiceEntity from a given ID
      * @return ProcessorDiagnosticsDTO for the given Processor
      */
     public ProcessorDiagnosticsDTO createProcessorDiagnosticsDto(final ProcessorNode procNode, final ProcessorStatus procStatus, final BulletinRepository bulletinRepo,
-            final FlowController flowController, final Function<String, ControllerServiceEntity> serviceEntityFactory) {
+                                                                 final FlowController flowController, final Function<String, ControllerServiceEntity> serviceEntityFactory) {
 
         final ProcessorDiagnosticsDTO procDiagnostics = new ProcessorDiagnosticsDTO();
 
@@ -3613,7 +3614,7 @@ public final class DtoFactory {
     }
 
     private Set<ControllerServiceDiagnosticsDTO> createReferencedServiceDiagnostics(final Map<PropertyDescriptor, String> properties, final ControllerServiceProvider serviceProvider,
-        final Function<String, ControllerServiceEntity> serviceEntityFactory) {
+                                                                                    final Function<String, ControllerServiceEntity> serviceEntityFactory) {
 
         final Set<ControllerServiceDiagnosticsDTO> referencedServiceDiagnostics = new HashSet<>();
         for (final Map.Entry<PropertyDescriptor, String> entry : properties.entrySet()) {
@@ -3644,13 +3645,13 @@ public final class DtoFactory {
     /**
      * Creates a ControllerServiceDiagnosticsDTO from the given Controller Service with some additional supporting information
      *
-     * @param serviceNode the controller service to create diagnostics for
+     * @param serviceNode          the controller service to create diagnostics for
      * @param serviceEntityFactory a function to convert a controller service id to a controller service entity
-     * @param serviceProvider the controller service provider
+     * @param serviceProvider      the controller service provider
      * @return ControllerServiceDiagnosticsDTO for the given Controller Service
      */
     public ControllerServiceDiagnosticsDTO createControllerServiceDiagnosticsDto(final ControllerServiceNode serviceNode, final Function<String, ControllerServiceEntity> serviceEntityFactory,
-            final ControllerServiceProvider serviceProvider) {
+                                                                                 final ControllerServiceProvider serviceProvider) {
 
         final ControllerServiceDiagnosticsDTO serviceDiagnostics = new ControllerServiceDiagnosticsDTO();
         final ControllerServiceEntity serviceEntity = serviceEntityFactory.apply(serviceNode.getIdentifier());
@@ -4022,7 +4023,7 @@ public final class DtoFactory {
      * Creates a PropertyDesriptorDTO from the specified PropertyDesriptor.
      *
      * @param propertyDescriptor descriptor
-     * @param groupId the Identifier of the Process Group that the component belongs to
+     * @param groupId            the Identifier of the Process Group that the component belongs to
      * @return dto
      */
     public PropertyDescriptorDTO createPropertyDescriptorDto(final PropertyDescriptor propertyDescriptor, final String groupId) {
@@ -4043,8 +4044,8 @@ public final class DtoFactory {
 
         // to support legacy/deprecated method .expressionLanguageSupported(true)
         String description = propertyDescriptor.isExpressionLanguageSupported()
-                && propertyDescriptor.getExpressionLanguageScope().equals(ExpressionLanguageScope.NONE)
-                ? "true (undefined scope)" : propertyDescriptor.getExpressionLanguageScope().getDescription();
+            && propertyDescriptor.getExpressionLanguageScope().equals(ExpressionLanguageScope.NONE)
+            ? "true (undefined scope)" : propertyDescriptor.getExpressionLanguageScope().getDescription();
         dto.setExpressionLanguageScope(description);
 
         // set the identifies controller service is applicable
@@ -4514,8 +4515,8 @@ public final class DtoFactory {
     /**
      *
      * @param original orig
-     * @param deep if <code>true</code>, all Connections, ProcessGroups, Ports, Processors, etc. will be copied. If <code>false</code>, the copy will have links to the same objects referenced by
-     * <code>original</code>.
+     * @param deep     if <code>true</code>, all Connections, ProcessGroups, Ports, Processors, etc. will be copied. If <code>false</code>, the copy will have links to the same objects referenced by
+     *                 <code>original</code>.
      *
      * @return dto
      */
@@ -4789,5 +4790,22 @@ public final class DtoFactory {
         }
 
         return dto;
+    }
+
+    public AnalyzeFlowRequestDTO createAnalyzeFlowRequestDTO(AnalyzeFlowStatus analyzeFlowRequest) {
+        AnalyzeFlowRequestDTO analyzeFlowRequestDTO = new AnalyzeFlowRequestDTO();
+
+        if (analyzeFlowRequest == null) {
+            analyzeFlowRequestDTO.setFailureReason("No such analysis!");
+        } else {
+            analyzeFlowRequestDTO.setProcessGroupId(analyzeFlowRequest.getProcessGroupId());
+            analyzeFlowRequestDTO.setSubmissionTime(new Date(analyzeFlowRequest.getRequestSubmissionTime()));
+            analyzeFlowRequestDTO.setLastUpdated(new Date(analyzeFlowRequest.getLastUpdated()));
+            analyzeFlowRequestDTO.setFinished(analyzeFlowRequest.getState().isFinished());
+            analyzeFlowRequestDTO.setFailureReason(analyzeFlowRequest.getFailureReason());
+            analyzeFlowRequestDTO.setState(analyzeFlowRequest.getState().toString());
+        }
+
+        return analyzeFlowRequestDTO;
     }
 }

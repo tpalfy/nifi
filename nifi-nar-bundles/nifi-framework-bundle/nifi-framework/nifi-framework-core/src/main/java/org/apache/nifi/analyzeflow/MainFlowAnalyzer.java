@@ -16,8 +16,10 @@
  */
 package org.apache.nifi.analyzeflow;
 
+import com.google.common.util.concurrent.ThreadFactoryBuilder;
 import org.apache.nifi.controller.FlowAnalysisRuleNode;
 import org.apache.nifi.controller.ProcessorNode;
+import org.apache.nifi.controller.flowanalysis.AnalyzeFlowRequest;
 import org.apache.nifi.controller.flowanalysis.FlowAnalysisRuleProvider;
 import org.apache.nifi.controller.flowanalysis.FlowAnalyzer;
 import org.apache.nifi.controller.service.ControllerServiceNode;
@@ -26,6 +28,8 @@ import org.apache.nifi.flow.VersionedComponent;
 import org.apache.nifi.flow.VersionedControllerService;
 import org.apache.nifi.flow.VersionedProcessGroup;
 import org.apache.nifi.flow.VersionedProcessor;
+import org.apache.nifi.flowanalysis.AnalyzeFlowState;
+import org.apache.nifi.flowanalysis.AnalyzeFlowStatus;
 import org.apache.nifi.flowanalysis.ComponentAnalysisResult;
 import org.apache.nifi.flowanalysis.GroupAnalysisResult;
 import org.apache.nifi.nar.ExtensionManager;
@@ -35,6 +39,8 @@ import org.apache.nifi.validation.RuleViolation;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import javax.annotation.PostConstruct;
+import javax.annotation.PreDestroy;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.Collection;
@@ -44,6 +50,12 @@ import java.util.HashSet;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentMap;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ThreadFactory;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -54,26 +66,27 @@ import java.util.stream.Stream;
 public class MainFlowAnalyzer implements FlowAnalyzer {
     private Logger logger = LoggerFactory.getLogger(this.getClass());
 
+    private final ConcurrentMap<String, AnalyzeFlowRequest> groupIdToRequest = new ConcurrentHashMap<>();
+
+    private int nrOfThreads;
     private FlowAnalysisContext flowAnalysisContext;
+
+    private ExecutorService executorService;
 
     private FlowAnalysisRuleProvider flowAnalysisRuleProvider;
     private ExtensionManager extensionManager;
     private ControllerServiceProvider controllerServiceProvider;
 
-    private Function<String, VersionedControllerService> controllerServiceDetailsProvider = id -> {
-        final NiFiRegistryFlowMapper mapper = createMapper();
+    @PostConstruct
+    public void init() {
+        ThreadFactory flowAnalyzerThreadFactory = new ThreadFactoryBuilder().setNameFormat("flow-analyzer-%d").build();
+        executorService = Executors.newFixedThreadPool(nrOfThreads, flowAnalyzerThreadFactory);
+    }
 
-        ControllerServiceNode controllerServiceNode = controllerServiceProvider.getControllerServiceNode(id);
-
-        VersionedControllerService versionedControllerService = mapper.mapControllerService(
-            controllerServiceNode,
-            controllerServiceProvider,
-            Collections.emptySet(),
-            new HashMap<>()
-        );
-
-        return versionedControllerService;
-    };
+    @PreDestroy
+    public void cleanUp() {
+        executorService.shutdown();
+    }
 
     @Override
     public void analyzeProcessor(ProcessorNode processorNode) {
@@ -128,6 +141,7 @@ public class MainFlowAnalyzer implements FlowAnalyzer {
                             flowAnalysisRuleNode.getRuleType(),
                             componentId,
                             componentId,
+                            component.getGroupIdentifier(),
                             ruleId,
                             analysisResult.getIssueId(),
                             analysisResult.getMessage()
@@ -141,8 +155,6 @@ public class MainFlowAnalyzer implements FlowAnalyzer {
 
         flowAnalysisContext.upsertComponentViolations(componentId, violations);
 
-        flowAnalysisContext.cleanUp();
-
         Instant end = Instant.now();
 
         long durationMs = Duration.between(start, end).toMillis();
@@ -151,16 +163,92 @@ public class MainFlowAnalyzer implements FlowAnalyzer {
     }
 
     @Override
+    public AnalyzeFlowStatus createAnalyzeFlowRequest(VersionedProcessGroup processGroup) {
+        String groupId = processGroup.getIdentifier();
+
+        AtomicBoolean isNewRequest = new AtomicBoolean(false);
+        AnalyzeFlowRequest request = groupIdToRequest.compute(groupId, (__, currentRequest) -> {
+            if (currentRequest == null || currentRequest.getState().isFinished()) {
+                isNewRequest.set(true);
+
+                AnalyzeFlowRequest newRequest = new AnalyzeFlowRequest(groupId);
+
+                return newRequest;
+            } else {
+                return currentRequest;
+            }
+        });
+
+        if (isNewRequest.get()) {
+            executorService.submit(() -> runProcessGroupAnalysis(processGroup, request));
+        }
+
+        return request;
+    }
+
+    protected void runProcessGroupAnalysis(VersionedProcessGroup processGroup, AnalyzeFlowRequest request) {
+        try {
+            if (request.getState() == AnalyzeFlowState.CANCELED) {
+                return;
+            }
+
+            request.setState(AnalyzeFlowState.ANALYZING);
+
+            analyzeProcessGroup(processGroup);
+
+            request.setState(AnalyzeFlowState.COMPLETE);
+        } catch (Exception e) {
+            request.setState(AnalyzeFlowState.FAILURE, "Flow Analysis of process group '" + processGroup.getIdentifier() + "' failed due to " + e);
+        }
+    }
+
+    @Override
+    public AnalyzeFlowStatus getAnalyzeFlowRequest(String processGroupId) {
+        AnalyzeFlowRequest request = groupIdToRequest.get(processGroupId);
+
+        return request;
+    }
+
+    @Override
+    public AnalyzeFlowStatus cancelAnalyzeFlowRequest(String processGroupId) {
+        AnalyzeFlowRequest request = groupIdToRequest.get(processGroupId);
+
+        if (request != null) {
+            request.cancel();
+        }
+
+        return request;
+    }
+
+    @Override
     public void analyzeProcessGroup(VersionedProcessGroup processGroup) {
         logger.debug("Running analysis on process group {}.", processGroup.getIdentifier());
 
-        String groupId = processGroup.getIdentifier();
         Instant start = Instant.now();
 
         Set<FlowAnalysisRuleNode> flowAnalysisRules = flowAnalysisRuleProvider.getAllFlowAnalysisRules();
 
         Collection<RuleViolation> groupViolations = new HashSet<>();
         Map<VersionedComponent, Collection<RuleViolation>> componentToRuleViolations = new HashMap<>();
+
+        analyzeProcessGroup(processGroup, flowAnalysisRules, groupViolations, componentToRuleViolations);
+
+        flowAnalysisContext.upsertGroupViolations(processGroup, groupViolations, componentToRuleViolations);
+
+        Instant end = Instant.now();
+
+        long durationMs = Duration.between(start, end).toMillis();
+
+        logger.debug("Flow Analysis took {} ms", durationMs);
+    }
+
+    private void analyzeProcessGroup(
+        VersionedProcessGroup processGroup,
+        Set<FlowAnalysisRuleNode> flowAnalysisRules,
+        Collection<RuleViolation> groupViolations,
+        Map<VersionedComponent, Collection<RuleViolation>> componentToRuleViolations
+    ) {
+        String groupId = processGroup.getIdentifier();
 
         flowAnalysisRules.stream()
             .filter(FlowAnalysisRuleNode::isEnabled)
@@ -184,6 +272,7 @@ public class MainFlowAnalyzer implements FlowAnalyzer {
                                         flowAnalysisRuleNode.getRuleType(),
                                         component.getGroupIdentifier(),
                                         component.getIdentifier(),
+                                        component.getGroupIdentifier(),
                                         ruleId,
                                         analysisResult.getIssueId(),
                                         analysisResult.getMessage()
@@ -192,12 +281,11 @@ public class MainFlowAnalyzer implements FlowAnalyzer {
                                 );
 
                         } else {
-                            String targetGroupId = analysisResult.getChildGroupId().orElse(groupId);
-
                             groupViolations.add(new RuleViolation(
                                 flowAnalysisRuleNode.getRuleType(),
-                                targetGroupId,
-                                targetGroupId,
+                                groupId,
+                                groupId,
+                                groupId,
                                 ruleId,
                                 analysisResult.getIssueId(),
                                 analysisResult.getMessage()
@@ -210,16 +298,10 @@ public class MainFlowAnalyzer implements FlowAnalyzer {
                 }
             });
 
+        processGroup.getProcessors().forEach(processor -> analyzeComponent(processor));
+        processGroup.getControllerServices().forEach(controllerService -> analyzeComponent(controllerService));
 
-        flowAnalysisContext.upsertGroupViolations(processGroup, groupViolations, componentToRuleViolations);
-
-        flowAnalysisContext.cleanUp();
-
-        Instant end = Instant.now();
-
-        long durationMs = Duration.between(start, end).toMillis();
-
-        logger.debug("Flow Analysis took {} ms", durationMs);
+        processGroup.getProcessGroups().forEach(childProcessGroup -> analyzeProcessGroup(childProcessGroup, flowAnalysisRules, groupViolations, componentToRuleViolations));
     }
 
     private NiFiRegistryFlowMapper createMapper() {
@@ -241,6 +323,10 @@ public class MainFlowAnalyzer implements FlowAnalyzer {
     @Override
     public void setControllerServiceProvider(ControllerServiceProvider controllerServiceProvider) {
         this.controllerServiceProvider = controllerServiceProvider;
+    }
+
+    public void setNrOfThreads(int nrOfThreads) {
+        this.nrOfThreads = nrOfThreads;
     }
 
     public void setFlowAnalysisContext(FlowAnalysisContext flowAnalysisContext) {

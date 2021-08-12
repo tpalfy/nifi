@@ -32,36 +32,36 @@ public class FlowAnalysisContextImpl implements FlowAnalysisContext {
     private final ConcurrentMap<String, ConcurrentMap<RuleViolationKey, RuleViolation>> subjectIdToRuleViolation = new ConcurrentHashMap<>();
 
     @Override
-    public void upsertComponentViolations(String subjectId, Collection<RuleViolation> violations) {
-        ConcurrentMap<RuleViolationKey, RuleViolation> subjectRuleViolations = subjectIdToRuleViolation
-            .computeIfAbsent(subjectId, __ -> new ConcurrentHashMap<>());
+    public void upsertComponentViolations(String componentId, Collection<RuleViolation> violations) {
+        ConcurrentMap<RuleViolationKey, RuleViolation> componentRuleViolations = subjectIdToRuleViolation
+            .computeIfAbsent(componentId, __ -> new ConcurrentHashMap<>());
 
-        subjectRuleViolations.values().stream()
-            .filter(violation -> subjectId.equals(violation.getScope()))
-            .filter(violation -> subjectId.equals(violation.getSubjectId()))
-            .forEach(violation -> violation.setAvailable(false));
+        synchronized (componentRuleViolations) {
+            componentRuleViolations.values().stream()
+                .filter(violation -> violation.getScope().equals(componentId))
+                .forEach(violation -> violation.setAvailable(false));
 
-        violations.forEach(violation -> subjectRuleViolations
-            .compute(new RuleViolationKey(violation), (ruleViolationKey, currentViolation) -> {
-                if (currentViolation != null) {
-                    violation.setEnabled(currentViolation.isEnabled());
-                }
+            violations.forEach(violation -> componentRuleViolations
+                .compute(new RuleViolationKey(violation), (ruleViolationKey, currentViolation) -> {
+                    if (currentViolation != null) {
+                        violation.setEnabled(currentViolation.isEnabled());
+                    }
 
-                return violation;
-            })
-        );
+                    return violation;
+                })
+            );
 
-        subjectRuleViolations.entrySet().removeIf(keyAndViolation -> {
-            RuleViolation violation = keyAndViolation.getValue();
+            componentRuleViolations.entrySet().removeIf(keyAndViolation -> {
+                RuleViolation violation = keyAndViolation.getValue();
 
-            return violation.getScope().equals(subjectId)
-                && violation.getSubjectId().equals(subjectId)
-                && !violation.isAvailable();
-        });
+                return violation.getScope().equals(componentId)
+                    && !violation.isAvailable();
+            });
+        }
     }
 
     @Override
-    public void upsertGroupViolations(
+    public synchronized void upsertGroupViolations(
         VersionedProcessGroup processGroup,
         Collection<RuleViolation> groupViolations,
         Map<VersionedComponent, Collection<RuleViolation>> componentToRuleViolations
@@ -90,10 +90,10 @@ public class FlowAnalysisContextImpl implements FlowAnalysisContext {
         });
 
         componentToRuleViolations.forEach((component, componentViolations) -> {
-            ConcurrentMap<RuleViolationKey, RuleViolation> subjectRuleViolations = subjectIdToRuleViolation
+            ConcurrentMap<RuleViolationKey, RuleViolation> componentRuleViolations = subjectIdToRuleViolation
                 .computeIfAbsent(component.getIdentifier(), __ -> new ConcurrentHashMap<>());
 
-            componentViolations.forEach(componentViolation -> subjectRuleViolations
+            componentViolations.forEach(componentViolation -> componentRuleViolations
                 .compute(new RuleViolationKey(componentViolation), (ruleViolationKey, currentViolation) -> {
                     if (currentViolation != null) {
                         componentViolation.setEnabled(currentViolation.isEnabled());
@@ -108,24 +108,24 @@ public class FlowAnalysisContextImpl implements FlowAnalysisContext {
     }
 
     private void hideGroupViolations(VersionedProcessGroup processGroup) {
-        String scope = processGroup.getIdentifier();
+        String groupId = processGroup.getIdentifier();
 
         subjectIdToRuleViolation.values().stream()
             .map(Map::values).flatMap(Collection::stream)
-            .filter(violation -> scope.equals(violation.getScope()))
+            .filter(violation -> violation.getScope().equals(groupId))
             .forEach(violation -> violation.setAvailable(false));
 
         processGroup.getProcessGroups().forEach(childProcessGroup -> hideGroupViolations(childProcessGroup));
     }
 
     private void purgeGroupViolations(VersionedProcessGroup processGroup) {
-        String scope = processGroup.getIdentifier();
+        String groupId = processGroup.getIdentifier();
 
         subjectIdToRuleViolation.values().forEach(violationMap ->
             violationMap.entrySet().removeIf(keyAndViolation -> {
                 RuleViolation violation = keyAndViolation.getValue();
 
-                return scope.equals(violation.getScope())
+                return violation.getScope().equals(groupId)
                     && !violation.isAvailable();
             }));
 
@@ -150,12 +150,27 @@ public class FlowAnalysisContextImpl implements FlowAnalysisContext {
     }
 
     @Override
+    public Collection<RuleViolation> getRuleViolationsForGroup(String groupId) {
+        Set<RuleViolation> groupViolations = subjectIdToRuleViolation.values().stream()
+            .map(Map::values).flatMap(Collection::stream)
+            .filter(violation -> violation.getGroupId().equals(groupId))
+            .collect(Collectors.toSet());
+
+        return groupViolations;
+    }
+
+    @Override
     public Collection<RuleViolation> getAllRuleViolations() {
         Set<RuleViolation> allRuleViolations = subjectIdToRuleViolation.values().stream()
             .map(Map::values).flatMap(Collection::stream)
             .collect(Collectors.toSet());
 
         return allRuleViolations;
+    }
+
+    @Override
+    public void removeRuleViolationsForSubject(String subjectId) {
+        subjectIdToRuleViolation.remove(subjectId);
     }
 
     @Override
@@ -166,11 +181,6 @@ public class FlowAnalysisContextImpl implements FlowAnalysisContext {
                     .entrySet()
                     .removeIf(keyAndViolation -> keyAndViolation.getValue().getRuleId().equals(ruleId))
             );
-    }
-
-    @Override
-    public void removeRuleViolationsForSubject(String subjectId) {
-        subjectIdToRuleViolation.remove(subjectId);
     }
 
     @Override

@@ -54,7 +54,6 @@ import org.apache.nifi.parameter.ParameterUpdate;
 import org.apache.nifi.registry.ComponentVariableRegistry;
 import org.apache.nifi.util.CharacterFilterUtils;
 import org.apache.nifi.util.file.classloader.ClassLoaderUtils;
-import org.apache.nifi.validation.FlowAnalysisContext;
 import org.apache.nifi.validation.RuleViolation;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -623,7 +622,6 @@ public abstract class AbstractComponentNode implements ComponentNode {
                 .ifPresent(ruleViolationStream -> ruleViolationStream
                     .filter(ruleViolation -> ruleViolation.getRuleType() == FlowAnalysisRuleType.POLICY)
                     .filter(RuleViolation::isEnabled)
-                    .filter(RuleViolation::isAvailable)
                     .forEach(ruleViolation -> validationResults.add(
                         new ValidationResult.Builder()
                             .subject(getComponent().getClass().getSimpleName())

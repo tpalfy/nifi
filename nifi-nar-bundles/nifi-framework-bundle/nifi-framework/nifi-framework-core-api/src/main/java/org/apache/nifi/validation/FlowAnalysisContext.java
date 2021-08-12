@@ -55,31 +55,38 @@ public interface FlowAnalysisContext {
     void updateRuleViolation(String scope, String subjectId, String ruleId, String issueId, boolean enabled);
 
     /**
-     * Returns a list of violations tied to a component or process group with a given id
+     * Returns rule violations tied to a component or process group with a given id
      *
      * @param subjectId The id of the component or process group
-     * @return a list of violations tied to a component or process group with the given subjectId
+     * @return Violations tied to a component or process group with the given subjectId
      */
     Collection<RuleViolation> getRuleViolationsForSubject(String subjectId);
 
     /**
-     * @return all current rule violations
+     * Returns a list of violations with the given groupId (non-recursive)
+     *
+     * @return Violations with the given groupId
+     */
+    Collection<RuleViolation> getRuleViolationsForGroup(String groupId);
+
+    /**
+     * @return All current rule violations
      */
     Collection<RuleViolation> getAllRuleViolations();
 
     /**
-     * Remove all violations produced by the rule with a given id
-     *
-     * @param ruleId The id of the rule
-     */
-    void removeRuleViolationsForRule(String ruleId);
-
-    /**
-     * Remove all violations tied to a component or process group with a given id
+     * Remove all rule violations tied to a component or process group with a given id
      *
      * @param subjectId The id of the component or process group
      */
     void removeRuleViolationsForSubject(String subjectId);
+
+    /**
+     * Remove all rule violations produced by the rule with a given id
+     *
+     * @param ruleId The id of the rule
+     */
+    void removeRuleViolationsForRule(String ruleId);
 
     /**
      * Removes empty entries from the map storing the rule violations

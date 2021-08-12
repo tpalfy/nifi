@@ -745,6 +745,7 @@
     <bean id="serviceFacadeLock" class="org.apache.nifi.web.NiFiServiceFacadeLock"/>
 
     <bean id="flowAnalyzer" class="org.apache.nifi.analyzeflow.MainFlowAnalyzer">
+        <property name="nrOfThreads" value="10" />
         <property name="flowAnalysisContext" ref="flowAnalysisContext" />
     </bean>
 </beans>

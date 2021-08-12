@@ -163,6 +163,7 @@ import org.apache.nifi.validation.RuleViolation;
 import org.apache.nifi.web.api.dto.AccessPolicyDTO;
 import org.apache.nifi.web.api.dto.AccessPolicySummaryDTO;
 import org.apache.nifi.web.api.dto.AffectedComponentDTO;
+import org.apache.nifi.web.api.dto.AnalyzeFlowRequestDTO;
 import org.apache.nifi.web.api.dto.BucketDTO;
 import org.apache.nifi.web.api.dto.BulletinBoardDTO;
 import org.apache.nifi.web.api.dto.BulletinDTO;
@@ -5745,7 +5746,16 @@ public class StandardNiFiServiceFacade implements NiFiServiceFacade {
     }
 
     @Override
-    public void analyzeFlow(String processGroupId) {
+    public Set<FlowAnalysisRuleEntity> getFlowAnalysisRules() {
+        Set<FlowAnalysisRuleEntity> flowAnalysisRules = flowAnalysisRuleDAO.getFlowAnalysisRules().stream()
+            .map(flowAnalysisRule -> createFlowAnalysisRuleEntity(flowAnalysisRule))
+            .collect(Collectors.toSet());
+
+        return flowAnalysisRules;
+    }
+
+    @Override
+    public AnalyzeFlowRequestDTO createAnalyzeFlowRequest(String processGroupId) {
         ProcessGroup processGroup = processGroupDAO.getProcessGroup(processGroupId);
 
         NiFiRegistryFlowMapper mapper = new NiFiRegistryFlowMapper(controllerFacade.getExtensionManager(), Function.identity());
@@ -5755,21 +5765,51 @@ public class StandardNiFiServiceFacade implements NiFiServiceFacade {
             controllerFacade.getControllerServiceProvider()
         );
 
-        flowAnalyzer.analyzeProcessGroup(nonVersionedProcessGroup);
+        AnalyzeFlowRequestDTO analyzeFlowRequestDTO = dtoFactory.createAnalyzeFlowRequestDTO(flowAnalyzer.createAnalyzeFlowRequest(nonVersionedProcessGroup));
+
+        return analyzeFlowRequestDTO;
     }
 
     @Override
-    public Set<FlowAnalysisRuleEntity> getFlowAnalysisRules() {
-        final Set<FlowAnalysisRuleNode> flowAnalysisRules = flowAnalysisRuleDAO.getFlowAnalysisRules();
-        return flowAnalysisRules.stream()
-            .map(flowAnalysisRule -> createFlowAnalysisRuleEntity(flowAnalysisRule))
-            .collect(Collectors.toSet());
+    public AnalyzeFlowRequestDTO getAnalyzeFlowRequest(String processGroupId) {
+        AnalyzeFlowRequestDTO analyzeFlowRequestDTO = dtoFactory.createAnalyzeFlowRequestDTO(flowAnalyzer.getAnalyzeFlowRequest(processGroupId));
+
+        return analyzeFlowRequestDTO;
+    }
+
+    @Override
+    public AnalyzeFlowRequestDTO deleteAnalyzeFlowRequest(String processGroupId) {
+        AnalyzeFlowRequestDTO analyzeFlowRequestDTO = dtoFactory.createAnalyzeFlowRequestDTO(flowAnalyzer.cancelAnalyzeFlowRequest(processGroupId));
+
+        return analyzeFlowRequestDTO;
     }
 
     @Override
     public void updateRuleViolation(String scope, String subjectId, String ruleId, String issueId, Boolean enabled) {
         flowAnalysisContext.updateRuleViolation(scope, subjectId, ruleId, issueId, enabled);
         controllerFacade.save();
+    }
+
+    @Override
+    public Collection<RuleViolation> getRuleViolations(String processGroupId) {
+        Set<RuleViolation> ruleViolations = getRuleViolationStream(processGroupId).collect(Collectors.toSet());
+
+        return ruleViolations;
+    }
+
+    public Stream<RuleViolation> getRuleViolationStream(String processGroupId) {
+        ProcessGroup processGroup = processGroupDAO.getProcessGroup(processGroupId);
+
+        Collection<RuleViolation> ruleViolations = flowAnalysisContext.getRuleViolationsForGroup(processGroupId);
+
+        Stream<RuleViolation> ruleViolationStreamForGroupAndAllChildren = Stream.concat(
+            ruleViolations.stream(),
+            processGroup.getProcessGroups().stream()
+                .map(ProcessGroup::getIdentifier)
+                .flatMap(this::getRuleViolationStream)
+        );
+
+        return ruleViolationStreamForGroupAndAllChildren;
     }
 
     @Override

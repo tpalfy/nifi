@@ -43,10 +43,10 @@ public class RuleViolationKey {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
         RuleViolationKey that = (RuleViolationKey) o;
-        return Objects.equals(scope, that.scope) &&
-            Objects.equals(subjectId, that.subjectId) &&
-            Objects.equals(ruleId, that.ruleId) &&
-            Objects.equals(issueId, that.issueId);
+        return Objects.equals(scope, that.scope)
+            && Objects.equals(subjectId, that.subjectId)
+            && Objects.equals(ruleId, that.ruleId)
+            && Objects.equals(issueId, that.issueId);
     }
 
     @Override

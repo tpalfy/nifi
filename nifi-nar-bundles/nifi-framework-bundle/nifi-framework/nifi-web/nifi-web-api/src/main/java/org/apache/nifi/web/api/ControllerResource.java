@@ -23,16 +23,20 @@ import io.swagger.annotations.ApiResponse;
 import io.swagger.annotations.ApiResponses;
 import io.swagger.annotations.Authorization;
 import org.apache.commons.lang3.StringUtils;
+import org.apache.nifi.authorization.AuthorizableLookup;
 import org.apache.nifi.authorization.AuthorizeControllerServiceReference;
 import org.apache.nifi.authorization.Authorizer;
 import org.apache.nifi.authorization.ComponentAuthorizable;
+import org.apache.nifi.authorization.ProcessGroupAuthorizable;
 import org.apache.nifi.authorization.RequestAction;
 import org.apache.nifi.authorization.resource.Authorizable;
 import org.apache.nifi.authorization.user.NiFiUserUtils;
 import org.apache.nifi.controller.FlowController;
+import org.apache.nifi.validation.RuleViolation;
 import org.apache.nifi.web.IllegalClusterResourceRequestException;
 import org.apache.nifi.web.NiFiServiceFacade;
 import org.apache.nifi.web.Revision;
+import org.apache.nifi.web.api.dto.AnalyzeFlowRequestDTO;
 import org.apache.nifi.web.api.dto.BulletinDTO;
 import org.apache.nifi.web.api.dto.ClusterDTO;
 import org.apache.nifi.web.api.dto.ControllerServiceDTO;
@@ -41,6 +45,7 @@ import org.apache.nifi.web.api.dto.FlowAnalysisRuleDTO;
 import org.apache.nifi.web.api.dto.NodeDTO;
 import org.apache.nifi.web.api.dto.RegistryDTO;
 import org.apache.nifi.web.api.dto.ReportingTaskDTO;
+import org.apache.nifi.web.api.entity.AnalyzeFlowRequestEntity;
 import org.apache.nifi.web.api.entity.BulletinEntity;
 import org.apache.nifi.web.api.entity.ClusterEntity;
 import org.apache.nifi.web.api.entity.ComponentHistoryEntity;
@@ -51,6 +56,7 @@ import org.apache.nifi.web.api.entity.FlowAnalysisResultEntity;
 import org.apache.nifi.web.api.entity.FlowAnalysisRuleEntity;
 import org.apache.nifi.web.api.entity.HistoryEntity;
 import org.apache.nifi.web.api.entity.NodeEntity;
+import org.apache.nifi.web.api.entity.ProcessGroupEntity;
 import org.apache.nifi.web.api.entity.RegistryClientEntity;
 import org.apache.nifi.web.api.entity.RegistryClientsEntity;
 import org.apache.nifi.web.api.entity.ReportingTaskEntity;
@@ -77,7 +83,6 @@ import javax.ws.rs.core.Response;
 import java.net.URI;
 import java.util.Collection;
 import java.util.Date;
-import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
 
@@ -429,20 +434,19 @@ public class ControllerResource extends ApplicationResource {
     }
 
     /**
-     * Executes a flow analysis for components within a given process group.
+     * Creates a request to run a flow analysis.
      *
-     * @param groupId The id of the process group to run analysis on
-     * @return a flowAnalysisRuleEntity containing the results that are in the scope of this process group
+     * @param processGroupId The id of the process group representing (a part of) the flow to be analyzed
+     * @return An analyzeFlowRequestEntity
      */
     @POST
     @Consumes(MediaType.WILDCARD)
     @Produces(MediaType.APPLICATION_JSON)
-    @Path("analyze-flow/{groupId}")
+    @Path("analyze-flow/{processGroupId}")
     @ApiOperation(
         value = "Executes a flow analysis for components within a given process group",
         response = FlowAnalysisResultEntity.class,
         authorizations = {
-            @Authorization(value = "Read - /controller"),
             @Authorization(value = "Read - /process-groups/{uuid} - For this and all encapsulated process groups")
         })
     @ApiResponses(value = {
@@ -452,33 +456,207 @@ public class ControllerResource extends ApplicationResource {
         @ApiResponse(code = 404, message = "The specified resource could not be found."),
         @ApiResponse(code = 409, message = "The request was valid but NiFi was not in the appropriate state to process it. Retrying the same request later may be successful.")
     })
-    public Response analyzeFlow(
-        @ApiParam(value = "The process group id.", required = true)
-        @PathParam("groupId") final String groupId
+    public Response createAnalyzeFlowRequest(
+        @ApiParam(
+            value = "The id of the process group representing (a part of) the flow to be analyzed.",
+            required = true
+        )
+        @PathParam("processGroupId")
+        final String processGroupId
     ) {
         if (isReplicateRequest()) {
             return replicate(HttpMethod.POST);
         }
 
+        ProcessGroupEntity requestProcessGroupEntity = new ProcessGroupEntity();
+        requestProcessGroupEntity.setId(processGroupId);
+
         return withWriteLock(
             serviceFacade,
-            new FlowAnalysisResultEntity(),
-            lookup -> {
-                final Authorizable controller = lookup.getController();
-                controller.authorize(authorizer, RequestAction.READ, NiFiUserUtils.getNiFiUser());
-
-                final Authorizable processGroup = lookup.getProcessGroup(groupId).getAuthorizable();
-                processGroup.authorize(authorizer, RequestAction.READ, NiFiUserUtils.getNiFiUser());
-            },
+            requestProcessGroupEntity,
+            lookup -> authorizeHandleAnalyzeFlowRequest(processGroupId, lookup),
             null,
-            (__) -> {
-                serviceFacade.analyzeFlow(groupId);
+            (processGroupEntity) -> {
+                AnalyzeFlowRequestDTO analyzeFlowRequest = serviceFacade.createAnalyzeFlowRequest(processGroupEntity.getId());
+                analyzeFlowRequest.setUri(generateResourceUri("controller", "analyze-flow", processGroupEntity.getId()));
 
-                FlowAnalysisResultEntity entity = createFlowAnalysisResultEntity();
+                AnalyzeFlowRequestEntity entity = new AnalyzeFlowRequestEntity();
+                entity.setAnalyzeFlowRequest(analyzeFlowRequest);
 
                 return generateOkResponse(entity).build();
             }
         );
+    }
+
+    /**
+     * Checks the status of an outstanding request for a flow analysis.
+     *
+     * @param processGroupId The id of the process group representing (a part of) the flow getting analyzed
+     * @return An analyzeFlowRequestEntity
+     */
+    @GET
+    @Consumes(MediaType.WILDCARD)
+    @Produces(MediaType.APPLICATION_JSON)
+    @Path("analyze-flow/{processGroupId}")
+    @ApiOperation(
+        value = "Gets the current status of a flow analysis request.",
+        response = AnalyzeFlowRequestEntity.class,
+        authorizations = {
+            @Authorization(value = "Read - /process-groups/{uuid} - For this and all encapsulated process groups")
+        }
+    )
+    @ApiResponses(
+        value = {
+            @ApiResponse(code = 400, message = "NiFi was unable to complete the request because it was invalid. The request should not be retried without modification."),
+            @ApiResponse(code = 401, message = "Client could not be authenticated."),
+            @ApiResponse(code = 403, message = "Client is not authorized to make this request."),
+            @ApiResponse(code = 404, message = "The specified resource could not be found."),
+            @ApiResponse(code = 409, message = "The request was valid but NiFi was not in the appropriate state to process it. Retrying the same request later may be successful.")
+        }
+    )
+    public Response getAnalyzeFlowRequest(
+        @ApiParam(
+            value = "The id of the process group representing (a part of) the flow to be analyzed.",
+            required = true
+        )
+        @PathParam("processGroupId")
+        final String processGroupId
+    ) {
+        if (isReplicateRequest()) {
+            return replicate(HttpMethod.GET);
+        }
+
+        // authorize access
+        serviceFacade.authorizeAccess(lookup -> authorizeHandleAnalyzeFlowRequest(processGroupId, lookup));
+
+        // get the analyze flow request
+        AnalyzeFlowRequestDTO analyzeFlowRequest = serviceFacade.getAnalyzeFlowRequest(processGroupId);
+        analyzeFlowRequest.setUri(generateResourceUri("controller", "analyze-flow", processGroupId));
+
+        // create the response entity
+        AnalyzeFlowRequestEntity entity = new AnalyzeFlowRequestEntity();
+        entity.setAnalyzeFlowRequest(analyzeFlowRequest);
+
+        return generateOkResponse(entity).build();
+    }
+
+    /**
+     * Cancels the specified flow analysis request.
+     *
+     * @param httpServletRequest request
+     * @param processGroupId     The id of the process group representing (a part of) the flow being analyzed
+     * @return An analyzeFlowRequestEntity
+     */
+    @DELETE
+    @Consumes(MediaType.WILDCARD)
+    @Produces(MediaType.APPLICATION_JSON)
+    @Path("analyze-flow/{processGroupId}")
+    @ApiOperation(
+        value = "Cancels and/or removes a flow analysis request.",
+        response = AnalyzeFlowRequestEntity.class,
+        authorizations = {
+            @Authorization(value = "Read - /process-groups/{uuid} - For this and all encapsulated process groups")
+        }
+    )
+    @ApiResponses(
+        value = {
+            @ApiResponse(code = 400, message = "NiFi was unable to complete the request because it was invalid. The request should not be retried without modification."),
+            @ApiResponse(code = 401, message = "Client could not be authenticated."),
+            @ApiResponse(code = 403, message = "Client is not authorized to make this request."),
+            @ApiResponse(code = 404, message = "The specified resource could not be found."),
+            @ApiResponse(code = 409, message = "The request was valid but NiFi was not in the appropriate state to process it. Retrying the same request later may be successful.")
+        }
+    )
+    public Response removeAnalyzeFlowRequest(
+        @Context final HttpServletRequest httpServletRequest,
+        @ApiParam(
+            value = "The id of the process group representing (a part of) the flow to be analyzed.",
+            required = true
+        )
+        @PathParam("processGroupId")
+        final String processGroupId
+    ) {
+        if (isReplicateRequest()) {
+            return replicate(HttpMethod.DELETE);
+        }
+
+        return withWriteLock(
+            serviceFacade,
+            new Entity(),
+            lookup -> authorizeHandleAnalyzeFlowRequest(processGroupId, lookup),
+            null,
+            (__) -> {
+                // delete the flow analysis request
+                final AnalyzeFlowRequestDTO analyzeFlowRequest = serviceFacade.deleteAnalyzeFlowRequest(processGroupId);
+                analyzeFlowRequest.setUri(generateResourceUri("controller", "analyze-flow", processGroupId));
+
+                // create the response entity
+                final AnalyzeFlowRequestEntity entity = new AnalyzeFlowRequestEntity();
+                entity.setAnalyzeFlowRequest(analyzeFlowRequest);
+
+                return generateOkResponse(entity).build();
+            }
+        );
+    }
+
+    private void authorizeHandleAnalyzeFlowRequest(String processGroupId, AuthorizableLookup lookup) {
+        final ProcessGroupAuthorizable processGroup = lookup.getProcessGroup(processGroupId);
+
+        authorizeProcessGroup(processGroup, authorizer, lookup, RequestAction.READ, false, false, false, false, false);
+
+        processGroup.getEncapsulatedProcessGroups()
+            .forEach(encapsulatedProcessGroup -> authorizeProcessGroup(encapsulatedProcessGroup, authorizer, lookup, RequestAction.READ, false, false, false, false, false));
+    }
+
+    /**
+     * Returns flow analysis results produced by the analysis of a given process group.
+     *
+     * @return a flowAnalysisRuleEntity containing flow analysis results produced by the analysis of the given process group
+     */
+    @GET
+    @Consumes(MediaType.WILDCARD)
+    @Produces(MediaType.APPLICATION_JSON)
+    @Path("analyze-flow/result/{processGroupId}")
+    @ApiOperation(
+        value = "Returns flow analysis results produced by the analysis of a given process group",
+        response = FlowAnalysisResultEntity.class,
+        authorizations = {
+            @Authorization(value = "Read - /controller")
+        })
+    @ApiResponses(value = {
+        @ApiResponse(code = 400, message = "NiFi was unable to complete the request because it was invalid. The request should not be retried without modification."),
+        @ApiResponse(code = 401, message = "Client could not be authenticated."),
+        @ApiResponse(code = 403, message = "Client is not authorized to make this request."),
+        @ApiResponse(code = 404, message = "The specified resource could not be found."),
+        @ApiResponse(code = 409, message = "The request was valid but NiFi was not in the appropriate state to process it. Retrying the same request later may be successful.")
+    })
+    public Response getFlowAnalysisResults(
+        @Context final HttpServletRequest httpServletRequest,
+        @ApiParam(
+            value = "The id of the process group representing (a part of) the flow to be analyzed.",
+            required = true
+        )
+        @PathParam("processGroupId")
+        final String processGroupId
+    ) {
+        if (isReplicateRequest()) {
+            return replicate(HttpMethod.GET);
+        }
+
+        serviceFacade.authorizeAccess(lookup -> {
+            final Authorizable controller = lookup.getController();
+            controller.authorize(authorizer, RequestAction.READ, NiFiUserUtils.getNiFiUser());
+        });
+
+        FlowAnalysisResultEntity entity = createFlowAnalysisResultEntity(processGroupId);
+
+        return generateOkResponse(entity).build();
+    }
+
+    private FlowAnalysisResultEntity createFlowAnalysisResultEntity(String processGroupId) {
+        Collection<RuleViolation> ruleViolations = serviceFacade.getRuleViolations(processGroupId);
+
+        return createFlowAnalysisResultEntity(ruleViolations);
     }
 
     /**
@@ -503,7 +681,7 @@ public class ControllerResource extends ApplicationResource {
         @ApiResponse(code = 404, message = "The specified resource could not be found."),
         @ApiResponse(code = 409, message = "The request was valid but NiFi was not in the appropriate state to process it. Retrying the same request later may be successful.")
     })
-    public Response getFlowAnalysisResult() {
+    public Response getAllFlowAnalysisResults() {
         if (isReplicateRequest()) {
             return replicate(HttpMethod.GET);
         }
@@ -519,7 +697,13 @@ public class ControllerResource extends ApplicationResource {
     }
 
     private FlowAnalysisResultEntity createFlowAnalysisResultEntity() {
-        Set<FlowAnalysisResultDTO> analysisResults = serviceFacade.getAllRuleViolations().stream()
+        Collection<RuleViolation> ruleViolations = serviceFacade.getAllRuleViolations();
+
+        return createFlowAnalysisResultEntity(ruleViolations);
+    }
+
+    private FlowAnalysisResultEntity createFlowAnalysisResultEntity(Collection<RuleViolation> ruleViolations) {
+        Set<FlowAnalysisResultDTO> analysisResults = ruleViolations.stream()
             .map(ruleViolation -> {
                 FlowAnalysisResultDTO resultDTO = new FlowAnalysisResultDTO();
 

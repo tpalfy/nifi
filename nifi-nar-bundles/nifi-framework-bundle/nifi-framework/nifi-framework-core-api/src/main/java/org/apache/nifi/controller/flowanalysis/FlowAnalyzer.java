@@ -19,6 +19,7 @@ package org.apache.nifi.controller.flowanalysis;
 import org.apache.nifi.controller.ProcessorNode;
 import org.apache.nifi.controller.service.ControllerServiceNode;
 import org.apache.nifi.controller.service.ControllerServiceProvider;
+import org.apache.nifi.flowanalysis.AnalyzeFlowStatus;
 import org.apache.nifi.nar.ExtensionManager;
 import org.apache.nifi.flow.VersionedProcessGroup;
 
@@ -41,10 +42,36 @@ public interface FlowAnalyzer {
     void analyzeControllerService(ControllerServiceNode controllerServiceNode);
 
     /**
+     * Creates a new analyze flow request for a given process group.
+     *
+     * @param nonVersionedProcessGroup The process group (as a {@link org.apache.nifi.flow.VersionedComponent VersionedComponent})
+     *                                 representing (a part of) the flow to be analyzed
+     * @return The analyze flow request status
+     */
+    AnalyzeFlowStatus createAnalyzeFlowRequest(VersionedProcessGroup nonVersionedProcessGroup);
+
+    /**
+     * Gets the status of the analyze flow request for a given process group
+     *
+     * @param processGroupId The id of the process group representing (a part of) the flow that should be analyzed
+     * @return The analyze flow request status
+     */
+    AnalyzeFlowStatus getAnalyzeFlowRequest(String processGroupId);
+
+    /**
+     * Cancels the analyze flow request for a given process group
+     *
+     * @param processGroupId The id of the process group representing (a part of) the flow that should be analyzed
+     * @return The analyze flow request status
+     */
+    AnalyzeFlowStatus cancelAnalyzeFlowRequest(String processGroupId);
+
+    /**
      * Analyze the flow or a part of it
      *
-     * @param processGroup the process group (as a {@link org.apache.nifi.flow.VersionedComponent VersionedComponent})
-     *                     representing (a part of) the flow to be analyzed
+     * @param processGroup The process group (as a {@link org.apache.nifi.flow.VersionedComponent VersionedComponent})
+     *                     representing (a part of) the flow to be analyzed. Recursive - all child process groups will
+     *                     be analyzed as well.
      */
     void analyzeProcessGroup(VersionedProcessGroup processGroup);
 

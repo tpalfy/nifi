@@ -31,6 +31,7 @@ public class RuleViolation {
     private final FlowAnalysisRuleType ruleType;
     private final String scope;
     private final String subjectId;
+    private final String groupId;
     private final String ruleId;
     private final String issueId;
     private final String violationMessage;
@@ -38,10 +39,19 @@ public class RuleViolation {
     private boolean enabled;
     private boolean available;
 
-    public RuleViolation(FlowAnalysisRuleType ruleType, String scope, String subjectId, String ruleId, String issueId, String violationMessage) {
+    public RuleViolation(
+        FlowAnalysisRuleType ruleType,
+        String scope,
+        String subjectId,
+        String groupId,
+        String ruleId,
+        String issueId,
+        String violationMessage
+    ) {
         this.ruleType = ruleType;
         this.scope = scope;
         this.subjectId = subjectId;
+        this.groupId = groupId;
         this.ruleId = ruleId;
         this.issueId = issueId;
         this.violationMessage = violationMessage;
@@ -70,6 +80,14 @@ public class RuleViolation {
      */
     public String getSubjectId() {
         return subjectId;
+    }
+
+    /**
+     * @return group id - if this violation is a result of a component analysis, then the id of the group of the component.
+     * If this violation is a result of a group analysis, then the id of that group itself.
+     */
+    public String getGroupId() {
+        return groupId;
     }
 
     /**
@@ -121,6 +139,7 @@ public class RuleViolation {
             .add("ruleType=" + ruleType)
             .add("scope='" + scope + "'")
             .add("subjectId='" + subjectId + "'")
+            .add("groupId='" + groupId + "'")
             .add("issueId='" + issueId + "'")
             .add("ruleId='" + ruleId + "'")
             .add("violationMessage='" + violationMessage + "'")
@@ -141,6 +160,7 @@ public class RuleViolation {
             .append(ruleType, that.ruleType)
             .append(scope, that.scope)
             .append(subjectId, that.subjectId)
+            .append(groupId, that.groupId)
             .append(issueId, that.issueId)
             .append(ruleId, that.ruleId)
             .append(violationMessage, that.violationMessage)
@@ -153,8 +173,9 @@ public class RuleViolation {
     public int hashCode() {
         return new HashCodeBuilder(17, 37)
             .append(ruleType)
+            .append(scope)
             .append(subjectId)
-            .append(subjectId)
+            .append(groupId)
             .append(issueId)
             .append(ruleId)
             .append(violationMessage)

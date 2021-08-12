@@ -53,7 +53,9 @@ public interface FlowAnalysisRule extends ConfigurableComponent {
     /**
      * Analyze a flow or a part of it, represented by a process group.
      * This is a callback method invoked by the framework.
-     * It should be expected that this method will be called by the root process group or any of its child process groups.
+     * It should be expected that this method will be called by the root process group and all of its child process groups.
+     * In case a flow analysis is requested for a particular process group this method will be called for all it's child
+     * process groups as well.
      *
      * @param processGroup the process group to be analyzed
      * @param context      see {@link FlowAnalysisRuleContext}

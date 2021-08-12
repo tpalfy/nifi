@@ -28,25 +28,19 @@ import java.util.StringJoiner;
 public class GroupAnalysisResult {
     private final String issueId;
     private final String message;
-    private final Optional<String> childGroupId;
     private final Optional<VersionedComponent> component;
 
     private GroupAnalysisResult(String issueId, String message) {
-        this(issueId, message, Optional.empty(), Optional.empty());
-    }
-
-    private GroupAnalysisResult(String childGroupId, String issueId, String message) {
-        this(issueId, message, Optional.of(childGroupId), Optional.empty());
+        this(issueId, message, Optional.empty());
     }
 
     private GroupAnalysisResult(VersionedComponent component, String issueId, String message) {
-        this(issueId, message, Optional.empty(), Optional.of(component));
+        this(issueId, message, Optional.of(component));
     }
 
-    private GroupAnalysisResult(String issueId, String message, Optional<String> childGroupId, Optional<VersionedComponent> component) {
+    private GroupAnalysisResult(String issueId, String message, Optional<VersionedComponent> component) {
         this.issueId = issueId;
         this.message = message;
-        this.childGroupId = childGroupId;
         this.component = component;
     }
 
@@ -60,23 +54,8 @@ public class GroupAnalysisResult {
      * @param message A violation message
      * @return a new analysis result instance tied to the currently analyzed process group
      */
-    public static GroupAnalysisResult newResultForThisGroup(String issueId, String message) {
+    public static GroupAnalysisResult newResultForGroup(String issueId, String message) {
         return new GroupAnalysisResult(issueId, message);
-    }
-
-    /**
-     * Create a new analysis result tied to a child process group of the currently analyzed one
-     *
-     * @param childGroupId The id of the child process group this result is tied to
-     * @param issueId      A rule-defined id that corresponds to a unique type of issue recognized by the rule.
-     *                     Newer analysis runs may produce a result with the same issueId in which case the old one will
-     *                     be overwritten (or recreated if it is the same in other aspects as well).
-     *                     However if the previous result was disabled the new one will be disabled as well.
-     * @param message      A violation message
-     * @return a new analysis result tied to a child process group of the currently analyzed one
-     */
-    public static GroupAnalysisResult newResultForChildGroup(String childGroupId, String issueId, String message) {
-        return new GroupAnalysisResult(childGroupId, issueId, message);
     }
 
     /**
@@ -114,15 +93,6 @@ public class GroupAnalysisResult {
     }
 
     /**
-     * @return the violation my be tied to a child process group of the currently analyzed one. This may be important
-     * when a subsequent analysis is run against that child process group directly.
-     * The reason being all results tied to a process group is cleared when a new analysis is run.
-     */
-    public Optional<String> getChildGroupId() {
-        return childGroupId;
-    }
-
-    /**
      * @return the component this result corresponds to or empty if this result corresponds to the entirety of the process group that was analyzed
      */
     public Optional<VersionedComponent> getComponent() {
@@ -134,7 +104,6 @@ public class GroupAnalysisResult {
         return new StringJoiner(", ", GroupAnalysisResult.class.getSimpleName() + "[", "]")
             .add("issueId='" + issueId + "'")
             .add("message='" + message + "'")
-            .add("childGroupId='" + childGroupId + "'")
             .add("component='" + component + "'")
             .toString();
     }
