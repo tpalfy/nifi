@@ -29,16 +29,16 @@ import java.util.Set;
 import java.util.regex.Pattern;
 
 public class FlowAnalysisEndpointMerger extends AbstractSingleEntityEndpoint<FlowAnalysisResultEntity> implements EndpointResponseMerger {
-    public static final Pattern ANALYZE_FLOW_URI_PATTERN = Pattern.compile("/nifi-api/controller/analyze-flow/[a-f0-9\\-]{36}");
-    public static final String GET_FLOW_ANALYSIS_RESULTS_URI = "/nifi-api/controller/analyze-flow/result";
+    public static final String GET_ALL_FLOW_ANALYSIS_RESULTS_URI = "/nifi-api/controller/analyze-flow/result";
+    public static final Pattern GET_GROUP_FLOW_ANALYSIS_RESULTS_URI_PATTERN = Pattern.compile("/nifi-api/controller/analyze-flow/result/[a-f0-9\\-]{36}");
 
     private final FlowAnalysisResultEntityMerger flowAnalysisResultEntityMerger = new FlowAnalysisResultEntityMerger();
 
     @Override
     public boolean canHandle(URI uri, String method) {
-        if ("POST".equalsIgnoreCase(method) && ANALYZE_FLOW_URI_PATTERN.matcher(uri.getPath()).matches()) {
-            return true;
-        } else if ("GET".equalsIgnoreCase(method) && GET_FLOW_ANALYSIS_RESULTS_URI.equals(uri.getPath())) {
+        if ("GET".equalsIgnoreCase(method)
+            && (GET_ALL_FLOW_ANALYSIS_RESULTS_URI.equals(uri.getPath()) ||  GET_GROUP_FLOW_ANALYSIS_RESULTS_URI_PATTERN.matcher(uri.getPath()).matches())
+        ) {
             return true;
         }
 

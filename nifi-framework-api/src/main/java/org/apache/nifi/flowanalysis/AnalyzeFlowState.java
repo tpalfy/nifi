@@ -16,18 +16,39 @@
  */
 package org.apache.nifi.flowanalysis;
 
+import java.util.Arrays;
+import java.util.Map;
+import java.util.function.Function;
+import java.util.stream.Collectors;
+
 /**
  * Represents the state of an AnalyzeFlowRequest
  */
 public enum AnalyzeFlowState {
-    WAITING("Waiting for flow analyzer to become available", false),
-    ANALYZING("Analyzing flow", false),
     FAILURE("Failed", true),
     CANCELED("Canceled by user", true),
+    ANALYZING("Analyzing flow", false),
+    WAITING("Waiting for flow analyzer to become available", false),
     COMPLETE("Completed successfully", true);
 
     private final String description;
     private final boolean finished;
+
+    static final Map<String, AnalyzeFlowState> descriptionToValue;
+
+    static {
+        descriptionToValue = Arrays.stream(AnalyzeFlowState.values())
+            .collect(Collectors.toMap(
+                AnalyzeFlowState::toString,
+                Function.identity()
+            ));
+    }
+
+    public static AnalyzeFlowState getValueByDescription(String description) {
+        AnalyzeFlowState value = descriptionToValue.get(description);
+
+        return value;
+    }
 
     AnalyzeFlowState(String description, boolean finished) {
         this.description = description;
