@@ -29,6 +29,11 @@
             <version>${netty.4.version}</version>
         </dependency>
         <dependency>
+            <groupId>io.netty</groupId>
+            <artifactId>netty-transport-sctp</artifactId>
+            <version>${netty.4.version}</version>
+        </dependency>
+        <dependency>
             <groupId>org.apache.nifi</groupId>
             <artifactId>nifi-api</artifactId>
             <version>1.16.0-SNAPSHOT</version>
