@@ -74,6 +74,7 @@ public class ListenSCTP extends AbstractProcessor {
     @Override
     protected void init(final ProcessorInitializationContext context) {
         this.descriptors = Collections.unmodifiableList(Arrays.asList(
+            ListenerProperties.MAX_BATCH_SIZE,
             ListenerProperties.MAX_MESSAGE_QUEUE_SIZE
         ));
 
@@ -119,7 +120,7 @@ public class ListenSCTP extends AbstractProcessor {
         serverBootstrap.childHandler(new StandardChannelInitializer<>(handlerSupplier));
 
         // TODO set proper host and port
-        InetSocketAddress localAddress = new InetSocketAddress("192.168.0.1", 22222);
+        InetSocketAddress localAddress = new InetSocketAddress("127.0.0.1", 22222);
 
         // Bind the server to primary address.
         try {
@@ -182,16 +183,20 @@ public class ListenSCTP extends AbstractProcessor {
     private class CompleteSctpMessageHandler extends ChannelInboundHandlerAdapter {
         @Override
         public void channelRead(ChannelHandlerContext ctx, Object msg) throws Exception {
-            SctpMessage sctpMessage = (SctpMessage) msg;
-
-            ByteBuf content = sctpMessage.content();
-
-            byte[] array = new byte[content.readableBytes()];
-            content.getBytes(0, array);
-
-            messages.add(new ByteArrayMessage(array, sctpMessage.messageInfo().address().toString()));
-
-            sctpMessage.release();
+            ListenSCTP.this.channelRead(ctx, msg);
         }
+    }
+
+    void channelRead(ChannelHandlerContext ctx, Object msg) throws Exception {
+        SctpMessage sctpMessage = (SctpMessage) msg;
+
+        ByteBuf content = sctpMessage.content();
+
+        byte[] array = new byte[content.readableBytes()];
+        content.getBytes(0, array);
+
+        messages.add(new ByteArrayMessage(array, sctpMessage.messageInfo().address().toString()));
+
+        sctpMessage.release();
     }
 }
