@@ -37,7 +37,6 @@ import org.apache.nifi.processor.exception.ProcessException;
 import org.apache.nifi.processor.util.listen.EventBatcher;
 import org.apache.nifi.processor.util.listen.FlowFileEventBatch;
 import org.apache.nifi.processor.util.listen.ListenerProperties;
-import sun.nio.ch.sctp.AssociationImpl;
 
 import java.io.IOException;
 import java.net.InetSocketAddress;
