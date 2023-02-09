@@ -50,7 +50,7 @@ public class UpdateRowsWriter extends AbstractBinlogTableEventWriter<UpdateRowsE
                            final EventWriterConfiguration eventWriterConfiguration) {
         long seqId = currentSequenceId;
         for (Map.Entry<Serializable[], Serializable[]> row : eventInfo.getRows()) {
-            FlowFile flowFile = configureEventWriter(eventWriterConfiguration, session, eventInfo);
+            configureEventWriter(eventWriterConfiguration, session, eventInfo);
             OutputStream outputStream = eventWriterConfiguration.getFlowFileOutputStream();
 
             try {
@@ -68,11 +68,10 @@ public class UpdateRowsWriter extends AbstractBinlogTableEventWriter<UpdateRowsE
             eventWriterConfiguration.incrementNumberOfEventsWritten();
 
             // Check if it is time to finish the FlowFile
-            if (FlowFileEventWriteStrategy.N_EVENTS_PER_FLOWFILE.equals(eventWriterConfiguration.getFlowFileEventWriteStrategy())
+            if (nEventsPerFlowFile(eventWriterConfiguration)
                     && eventWriterConfiguration.getNumberOfEventsWritten() == eventWriterConfiguration.getNumberOfEventsPerFlowFile()) {
-                flowFile = finishAndTransferFlowFile(eventWriterConfiguration, transitUri, seqId, eventInfo, relationship);
+                finishAndTransferFlowFile(session, eventWriterConfiguration, transitUri, seqId, eventInfo, relationship);
             }
-            eventWriterConfiguration.setCurrentFlowFile(flowFile);
             seqId++;
         }
         return seqId;

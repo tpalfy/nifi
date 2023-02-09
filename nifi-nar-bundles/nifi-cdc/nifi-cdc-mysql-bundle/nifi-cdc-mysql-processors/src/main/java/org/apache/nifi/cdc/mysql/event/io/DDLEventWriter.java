@@ -36,7 +36,7 @@ public class DDLEventWriter extends AbstractBinlogTableEventWriter<DDLEventInfo>
     @Override
     public long writeEvent(ProcessSession session, String transitUri, DDLEventInfo eventInfo, long currentSequenceId, Relationship relationship,
                            final EventWriterConfiguration eventWriterConfiguration) {
-        FlowFile flowFile = configureEventWriter(eventWriterConfiguration, session, eventInfo);
+        configureEventWriter(eventWriterConfiguration, session, eventInfo);
         OutputStream outputStream = eventWriterConfiguration.getFlowFileOutputStream();
 
         try {
@@ -51,11 +51,10 @@ public class DDLEventWriter extends AbstractBinlogTableEventWriter<DDLEventInfo>
         eventWriterConfiguration.incrementNumberOfEventsWritten();
 
         // Check if it is time to finish the FlowFile
-        if (FlowFileEventWriteStrategy.N_EVENTS_PER_FLOWFILE.equals(eventWriterConfiguration.getFlowFileEventWriteStrategy())
+        if (nEventsPerFlowFile(eventWriterConfiguration)
                 && eventWriterConfiguration.getNumberOfEventsWritten() == eventWriterConfiguration.getNumberOfEventsPerFlowFile()) {
-            flowFile = finishAndTransferFlowFile(eventWriterConfiguration, transitUri, currentSequenceId, eventInfo, relationship);
+            finishAndTransferFlowFile(session, eventWriterConfiguration, transitUri, currentSequenceId, eventInfo, relationship);
         }
-        eventWriterConfiguration.setCurrentFlowFile(flowFile);
         return currentSequenceId + 1;
     }
 }

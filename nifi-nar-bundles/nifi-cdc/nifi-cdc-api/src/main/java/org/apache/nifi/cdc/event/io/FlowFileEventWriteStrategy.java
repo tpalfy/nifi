@@ -16,7 +16,38 @@
  */
 package org.apache.nifi.cdc.event.io;
 
-public enum FlowFileEventWriteStrategy {
-    N_EVENTS_PER_FLOWFILE,
-    ONE_TRANSACTION_PER_FLOWFILE,
+import org.apache.nifi.components.DescribedValue;
+
+public enum FlowFileEventWriteStrategy implements DescribedValue {
+    N_EVENTS_PER_FLOWFILE(
+            "N Events Per FlowFile",
+            "This strategy causes the number of events specified in the Events per FlowFile each binlog event to be written to its own FlowFile"
+    ),
+    ONE_TRANSACTION_PER_FLOWFILE(
+            "One Transaction Per FlowFile",
+            "This strategy causes each event from a transaction (from BEGIN to COMMIT) to be written to a FlowFile"
+    );
+
+    private String displayName;
+    private String description;
+
+    FlowFileEventWriteStrategy(String displayName, String description) {
+        this.displayName = displayName;
+        this.description = description;
+    }
+
+    @Override
+    public String getValue() {
+        return name();
+    }
+
+    @Override
+    public String getDisplayName() {
+        return displayName;
+    }
+
+    @Override
+    public String getDescription() {
+        return description;
+    }
 }

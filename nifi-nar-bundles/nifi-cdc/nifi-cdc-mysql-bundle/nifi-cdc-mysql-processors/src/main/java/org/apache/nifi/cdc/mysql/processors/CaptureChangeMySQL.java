@@ -139,6 +139,7 @@ import static com.github.shyiko.mysql.binlog.event.EventType.XID;
 import static org.apache.nifi.cdc.event.io.EventWriter.APPLICATION_JSON;
 import static org.apache.nifi.cdc.event.io.EventWriter.CDC_EVENT_TYPE_ATTRIBUTE;
 import static org.apache.nifi.cdc.event.io.EventWriter.SEQUENCE_ID_KEY;
+import static org.apache.nifi.cdc.event.io.FlowFileEventWriteStrategy.N_EVENTS_PER_FLOWFILE;
 
 
 /**
@@ -193,11 +194,6 @@ public class CaptureChangeMySQL extends AbstractSessionFactoryProcessor {
     private static final AllowableValue SSL_MODE_VERIFY_IDENTITY = new AllowableValue(SSLMode.VERIFY_IDENTITY.toString(),
             SSLMode.VERIFY_IDENTITY.toString(),
             "Connect with TLS or fail when server support not enabled. Verify server hostname matches presented X.509 certificate names or fail when not matched");
-
-    private static final AllowableValue N_EVENTS_PER_FLOWFILE_STRATEGY = new AllowableValue(FlowFileEventWriteStrategy.N_EVENTS_PER_FLOWFILE.name(), "N Events Per FlowFile",
-            "This strategy causes the number of events specified in the Events per FlowFile each binlog event to be written to its own FlowFile");
-    private static final AllowableValue ONE_TRANSACTION_PER_FLOWFILE_STRATEGY = new AllowableValue(FlowFileEventWriteStrategy.ONE_TRANSACTION_PER_FLOWFILE.name(),
-            "One Transaction Per FlowFile", "This strategy causes each event from a transaction (from BEGIN to COMMIT) to be written to a FlowFile");
 
 
     // Properties
@@ -291,8 +287,8 @@ public class CaptureChangeMySQL extends AbstractSessionFactoryProcessor {
             .required(true)
             .sensitive(false)
             .addValidator(StandardValidators.NON_EMPTY_VALIDATOR)
-            .allowableValues(N_EVENTS_PER_FLOWFILE_STRATEGY, ONE_TRANSACTION_PER_FLOWFILE_STRATEGY)
-            .defaultValue(N_EVENTS_PER_FLOWFILE_STRATEGY.getValue())
+            .allowableValues(FlowFileEventWriteStrategy.class)
+            .defaultValue(N_EVENTS_PER_FLOWFILE.getValue())
             .expressionLanguageSupported(ExpressionLanguageScope.NONE)
             .build();
 
@@ -306,7 +302,7 @@ public class CaptureChangeMySQL extends AbstractSessionFactoryProcessor {
             .addValidator(StandardValidators.POSITIVE_INTEGER_VALIDATOR)
             .defaultValue("1")
             .expressionLanguageSupported(ExpressionLanguageScope.VARIABLE_REGISTRY)
-            .dependsOn(EVENTS_PER_FLOWFILE_STRATEGY, N_EVENTS_PER_FLOWFILE_STRATEGY.getValue())
+            .dependsOn(EVENTS_PER_FLOWFILE_STRATEGY, N_EVENTS_PER_FLOWFILE.getValue())
             .build();
 
     public static final PropertyDescriptor SERVER_ID = new PropertyDescriptor.Builder()
@@ -619,9 +615,7 @@ public class CaptureChangeMySQL extends AbstractSessionFactoryProcessor {
         final FlowFileEventWriteStrategy flowFileEventWriteStrategy = FlowFileEventWriteStrategy.valueOf(context.getProperty(EVENTS_PER_FLOWFILE_STRATEGY).getValue());
         eventWriterConfiguration = new EventWriterConfiguration(
                 flowFileEventWriteStrategy,
-                0,
-                context.getProperty(NUMBER_OF_EVENTS_PER_FLOWFILE).evaluateAttributeExpressions().asInteger(),
-                null
+                context.getProperty(NUMBER_OF_EVENTS_PER_FLOWFILE).evaluateAttributeExpressions().asInteger()
         );
 
         PropertyValue dbNameValue = context.getProperty(DATABASE_NAME_PATTERN);
@@ -768,7 +762,6 @@ public class CaptureChangeMySQL extends AbstractSessionFactoryProcessor {
         if (currentSession == null) {
             currentSession = sessionFactory.createSession();
         }
-        eventWriterConfiguration.setWorkingSession(currentSession);
 
         try {
             outputEvents(currentSession, log);
@@ -1074,7 +1067,7 @@ public class CaptureChangeMySQL extends AbstractSessionFactoryProcessor {
                                         FlowFile flowFile = eventWriterConfiguration.getCurrentFlowFile();
                                         if (flowFile != null && currentEventWriter != null) {
                                             // Flush the events to the FlowFile when the processor is stopped
-                                            currentEventWriter.finishAndTransferFlowFile(eventWriterConfiguration, transitUri, currentSequenceId.get(), currentEventInfo, REL_SUCCESS);
+                                            currentEventWriter.finishAndTransferFlowFile(currentSession, eventWriterConfiguration, transitUri, currentSequenceId.get(), currentEventInfo, REL_SUCCESS);
                                         }
                                     }
                                 }
@@ -1236,7 +1229,7 @@ public class CaptureChangeMySQL extends AbstractSessionFactoryProcessor {
                 FlowFile flowFile = eventWriterConfiguration.getCurrentFlowFile();
                 if (flowFile != null && currentEventWriter != null) {
                     // Flush the events to the FlowFile when the processor is stopped
-                    currentEventWriter.finishAndTransferFlowFile(eventWriterConfiguration, transitUri, currentSequenceId.get(), currentEventInfo, REL_SUCCESS);
+                    currentEventWriter.finishAndTransferFlowFile(currentSession, eventWriterConfiguration, transitUri, currentSequenceId.get(), currentEventInfo, REL_SUCCESS);
                 }
                 currentSession.commitAsync();
             }
@@ -1336,7 +1329,7 @@ public class CaptureChangeMySQL extends AbstractSessionFactoryProcessor {
     }
 
     protected Map<String, String> getCommonAttributes(final long sequenceId, BinlogEventInfo eventInfo) {
-        return new HashMap<>() {
+        return new HashMap<String, String>() {
             {
                 put(SEQUENCE_ID_KEY, Long.toString(sequenceId));
                 put(CDC_EVENT_TYPE_ATTRIBUTE, eventInfo.getEventType());
